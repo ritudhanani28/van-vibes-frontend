@@ -94,16 +94,6 @@ export function CafeHeader() {
               </span>
             )}
           </button>
-
-          {/* Discreet Staff Portal Link */}
-          <Link
-            href="/dashboard"
-            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-brand-green-light hover:bg-brand-green-surface text-brand-gold flex items-center justify-center transition-colors text-xs shrink-0"
-            title="Cafe Staff Dashboard"
-            aria-label="Staff Dashboard"
-          >
-            ⚙️
-          </Link>
         </div>
       </div>
     </header>
