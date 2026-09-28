@@ -62,21 +62,17 @@ export default function ChefDashboardPage() {
     }
   };
 
-  // Group kitchen orders into stages
+  // Group kitchen orders into 3 stages
   const newOrders = useMemo(
     () => orders.filter((o) => o.status === 'ORDER_PLACED'),
     [orders]
   );
-  const inPrepOrders = useMemo(
-    () => orders.filter((o) => ['ACCEPTED', 'PREPARING'].includes(o.status)),
+  const acceptedOrders = useMemo(
+    () => orders.filter((o) => ['ACCEPTED', 'PREPARING', 'READY'].includes(o.status)),
     [orders]
   );
-  const readyOrders = useMemo(
-    () => orders.filter((o) => o.status === 'READY'),
-    [orders]
-  );
-  const recentlyCompleted = useMemo(
-    () => orders.filter((o) => ['SERVED', 'COMPLETED'].includes(o.status)).slice(0, 6),
+  const completedOrders = useMemo(
+    () => orders.filter((o) => ['SERVED', 'COMPLETED'].includes(o.status)),
     [orders]
   );
 
@@ -84,31 +80,31 @@ export default function ChefDashboardPage() {
     <div className="min-h-screen bg-brand-green-deep text-brand-beige font-sans flex flex-col">
       {/* Chef Kitchen Top Bar */}
       <header className="bg-brand-green text-brand-beige border-b border-brand-green-light sticky top-0 z-30 shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-brand-gold text-brand-green font-extrabold flex items-center justify-center text-lg shadow-sm">
-              <ChefHat className="w-5 h-5 text-brand-green" />
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-brand-gold text-brand-green font-extrabold flex items-center justify-center text-base sm:text-lg shadow-sm shrink-0">
+              <ChefHat className="w-4 h-4 sm:w-5 sm:h-5 text-brand-green" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="font-extrabold text-lg sm:text-xl tracking-tight text-brand-beige">
-                  Kitchen Display System (KDS)
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                <h1 className="font-extrabold text-base sm:text-xl tracking-tight text-brand-beige">
+                  Kitchen Display System
                 </h1>
-                <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded bg-brand-gold text-brand-green">
+                <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest px-1.5 sm:px-2 py-0.5 rounded bg-brand-gold text-brand-green whitespace-nowrap">
                   Chef Mode
                 </span>
               </div>
-              <p className="text-xs text-brand-beige-muted">
-                वान VIBES • Order Preparation & Live Status Pipeline
+              <p className="text-[10px] sm:text-xs text-brand-beige-muted">
+                वन VIBES (Vaan Vibes Cafe & Restro) • Kitchen KDS
               </p>
             </div>
           </div>
 
           {/* Quick Controls */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 flex-wrap">
             <button
               onClick={() => setAudioEnabled(!audioEnabled)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
+              className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-bold transition-all border min-h-[34px] ${
                 audioEnabled
                   ? 'bg-brand-gold/20 text-brand-gold border-brand-gold/40'
                   : 'bg-brand-green-light text-brand-beige-muted border-brand-green-light'
@@ -120,7 +116,7 @@ export default function ChefDashboardPage() {
 
             <Link
               href="/dashboard"
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-brand-green-light hover:bg-brand-green-surface border border-brand-green-surface text-brand-beige text-xs font-bold transition-all"
+              className="flex items-center gap-1 sm:gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full bg-brand-green-light hover:bg-brand-green-surface border border-brand-green-surface text-brand-beige text-xs font-bold transition-all min-h-[34px]"
             >
               <span>Cafe Admin</span>
               <ExternalLink className="w-3.5 h-3.5" />
@@ -128,23 +124,23 @@ export default function ChefDashboardPage() {
 
             <button
               onClick={handleRefresh}
-              className="w-8 h-8 rounded-full bg-brand-green-light hover:bg-brand-green-surface text-brand-beige flex items-center justify-center transition-all"
+              className="w-8 h-8 rounded-full bg-brand-green-light hover:bg-brand-green-surface text-brand-beige flex items-center justify-center transition-all shrink-0 min-h-[34px]"
               title="Refresh"
             >
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
           </div>
         </div>
       </header>
 
       {/* Main KDS Board */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex-1 w-full space-y-6">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 flex-1 w-full space-y-4 sm:space-y-6">
         {/* Stage Counters Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
           <div className="p-3.5 rounded-2xl bg-brand-green border border-brand-green-light/80 shadow-xs flex items-center justify-between">
             <div>
               <p className="text-[10px] uppercase font-bold text-brand-beige-muted tracking-wider">
-                New Tickets
+                1. Order Placed (New)
               </p>
               <p className="font-mono font-black text-2xl text-amber-400">{newOrders.length}</p>
             </div>
@@ -154,38 +150,28 @@ export default function ChefDashboardPage() {
           <div className="p-3.5 rounded-2xl bg-brand-green border border-brand-green-light/80 shadow-xs flex items-center justify-between">
             <div>
               <p className="text-[10px] uppercase font-bold text-brand-beige-muted tracking-wider">
-                In Preparation
+                2. Order Accepted (Kitchen)
               </p>
-              <p className="font-mono font-black text-2xl text-brand-gold">{inPrepOrders.length}</p>
+              <p className="font-mono font-black text-2xl text-brand-gold">{acceptedOrders.length}</p>
             </div>
-            <Flame className="w-6 h-6 text-brand-gold/50" />
+            <ChefHat className="w-6 h-6 text-brand-gold/50" />
           </div>
 
           <div className="p-3.5 rounded-2xl bg-brand-green border border-brand-green-light/80 shadow-xs flex items-center justify-between">
             <div>
               <p className="text-[10px] uppercase font-bold text-brand-beige-muted tracking-wider">
-                Ready for Server
-              </p>
-              <p className="font-mono font-black text-2xl text-purple-400">{readyOrders.length}</p>
-            </div>
-            <Sparkles className="w-6 h-6 text-purple-400/50" />
-          </div>
-
-          <div className="p-3.5 rounded-2xl bg-brand-green border border-brand-green-light/80 shadow-xs flex items-center justify-between">
-            <div>
-              <p className="text-[10px] uppercase font-bold text-brand-beige-muted tracking-wider">
-                Served Today
+                3. Completed
               </p>
               <p className="font-mono font-black text-2xl text-emerald-400">
-                {orders.filter((o) => ['SERVED', 'COMPLETED'].includes(o.status)).length}
+                {completedOrders.length}
               </p>
             </div>
             <CheckCircle2 className="w-6 h-6 text-emerald-400/50" />
           </div>
         </div>
 
-        {/* 3-Column Kitchen Lanes: New -> In Prep -> Ready */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
+        {/* 2-Column Kitchen Lanes: New (Order Placed) -> Order Accepted (Cooking) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
           {/* COLUMN 1: NEW ORDERS */}
           <div className="space-y-3">
             <div className="flex items-center justify-between px-2 pb-1 border-b border-amber-500/30">
@@ -195,7 +181,7 @@ export default function ChefDashboardPage() {
                   New Incoming ({newOrders.length})
                 </h2>
               </div>
-              <span className="text-[11px] text-brand-beige-muted">Pending Accept</span>
+              <span className="text-[11px] text-brand-beige-muted">Stage 1: Placed</span>
             </div>
 
             {newOrders.length === 0 ? (
@@ -210,76 +196,36 @@ export default function ChefDashboardPage() {
                   order={order}
                   onAction={() => handleUpdateStatus(order.id, 'ACCEPTED')}
                   actionLabel="Accept Order"
-                  actionColor="bg-amber-600 hover:bg-amber-700"
+                  actionColor="bg-blue-600 hover:bg-blue-700 text-white"
                 />
               ))
             )}
           </div>
 
-          {/* COLUMN 2: IN PREPARATION */}
+          {/* COLUMN 2: ORDER ACCEPTED / IN KITCHEN */}
           <div className="space-y-3">
             <div className="flex items-center justify-between px-2 pb-1 border-b border-brand-gold/30">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-brand-gold animate-pulse" />
                 <h2 className="font-black text-sm uppercase tracking-wider text-brand-gold">
-                  Cooking / Preparing ({inPrepOrders.length})
+                  Order Accepted ({acceptedOrders.length})
                 </h2>
               </div>
-              <span className="text-[11px] text-brand-beige-muted">In Kitchen</span>
+              <span className="text-[11px] text-brand-beige-muted">Stage 2: In Kitchen</span>
             </div>
 
-            {inPrepOrders.length === 0 ? (
+            {acceptedOrders.length === 0 ? (
               <div className="p-8 rounded-2xl bg-brand-green/40 border border-brand-green-light text-center text-xs text-brand-beige-muted space-y-1">
                 <UtensilsCrossed className="w-6 h-6 text-brand-beige-muted/40 mx-auto" />
-                <p>Nothing currently on stove or espresso bar.</p>
+                <p>No orders currently in preparation.</p>
               </div>
             ) : (
-              inPrepOrders.map((order) => (
+              acceptedOrders.map((order) => (
                 <ChefTicketCard
                   key={order.id}
                   order={order}
-                  onAction={() =>
-                    order.status === 'ACCEPTED'
-                      ? handleUpdateStatus(order.id, 'PREPARING')
-                      : handleUpdateStatus(order.id, 'READY')
-                  }
-                  actionLabel={
-                    order.status === 'ACCEPTED' ? 'Start Cooking / Brewing' : 'Mark Food Ready'
-                  }
-                  actionColor={
-                    order.status === 'ACCEPTED'
-                      ? 'bg-brand-gold hover:bg-brand-gold/90 text-brand-green'
-                      : 'bg-purple-600 hover:bg-purple-700 text-white'
-                  }
-                />
-              ))
-            )}
-          </div>
-
-          {/* COLUMN 3: READY FOR SERVER */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between px-2 pb-1 border-b border-purple-500/30">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-purple-400" />
-                <h2 className="font-black text-sm uppercase tracking-wider text-purple-400">
-                  Ready for Server ({readyOrders.length})
-                </h2>
-              </div>
-              <span className="text-[11px] text-brand-beige-muted">Plated & Hot</span>
-            </div>
-
-            {readyOrders.length === 0 ? (
-              <div className="p-8 rounded-2xl bg-brand-green/40 border border-brand-green-light text-center text-xs text-brand-beige-muted space-y-1">
-                <Sparkles className="w-6 h-6 text-brand-beige-muted/40 mx-auto" />
-                <p>No dishes waiting for pickup.</p>
-              </div>
-            ) : (
-              readyOrders.map((order) => (
-                <ChefTicketCard
-                  key={order.id}
-                  order={order}
-                  onAction={() => handleUpdateStatus(order.id, 'SERVED')}
-                  actionLabel="Mark Served / Handed Over"
+                  onAction={() => handleUpdateStatus(order.id, 'COMPLETED')}
+                  actionLabel="Mark Completed"
                   actionColor="bg-emerald-600 hover:bg-emerald-700 text-white"
                 />
               ))
@@ -288,13 +234,13 @@ export default function ChefDashboardPage() {
         </div>
 
         {/* Recently Served Footer Strip */}
-        {recentlyCompleted.length > 0 && (
+        {completedOrders.length > 0 && (
           <div className="pt-6 border-t border-brand-green-light space-y-3">
             <h3 className="font-bold text-xs uppercase tracking-wider text-brand-beige-muted px-1">
               Recently Completed Tickets
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-              {recentlyCompleted.map((ord) => (
+              {completedOrders.slice(0, 6).map((ord) => (
                 <div
                   key={ord.id}
                   className="p-2.5 rounded-xl bg-brand-green/60 border border-brand-green-light text-xs space-y-1 opacity-70 hover:opacity-100 transition-opacity"

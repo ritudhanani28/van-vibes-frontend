@@ -1,7 +1,7 @@
 import React, { Suspense } from 'react';
 import { MenuClient } from '@/components/MenuClient';
 
-export default function HomePage() {
+export default function VaanVibesLegacyMenuPage() {
   return (
     <Suspense
       fallback={

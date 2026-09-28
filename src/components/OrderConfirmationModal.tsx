@@ -50,36 +50,36 @@ export function OrderConfirmationModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-green-deep/60 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-brand-green-deep/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div
-        className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-brand-beige-dark overflow-hidden flex flex-col max-h-[92vh]"
+        className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-brand-beige-dark overflow-hidden flex flex-col max-h-[92dvh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="px-5 py-4 bg-brand-green text-brand-beige border-b border-brand-green-light flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+        <div className="px-4 sm:px-5 py-3 sm:py-4 bg-brand-green text-brand-beige border-b border-brand-green-light flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2 sm:gap-2.5">
             {step === 'summary' && (
               <button
                 type="button"
                 onClick={() => setStep('details')}
-                className="w-7 h-7 rounded-full bg-brand-green-light hover:bg-brand-green-surface flex items-center justify-center text-brand-beige transition-colors mr-1"
+                className="w-7 h-7 rounded-full bg-brand-green-light hover:bg-brand-green-surface flex items-center justify-center text-brand-beige transition-colors mr-1 shrink-0"
                 aria-label="Back to details"
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
             )}
             <div>
-              <h3 className="font-extrabold text-lg text-brand-beige">
+              <h3 className="font-extrabold text-base sm:text-lg text-brand-beige">
                 {step === 'details' ? 'Customer Details' : 'Confirm Your Order'}
               </h3>
-              <p className="text-xs text-brand-beige-muted">
-                {table ? `Table ${table.tableNumber.toString().padStart(2, '0')}` : 'Dine-In Order'} • Vaan Vibes Cafe
+              <p className="text-[11px] sm:text-xs text-brand-beige-muted">
+                {table ? `Table ${table.tableNumber.toString().padStart(2, '0')}` : 'Dine-In Order'} • Vaan Vibes Cafe & Restro
               </p>
             </div>
           </div>
           <button
             onClick={() => setIsCheckoutOpen(false)}
-            className="w-8 h-8 rounded-full bg-brand-green-light hover:bg-brand-green-surface text-brand-beige flex items-center justify-center transition-all"
+            className="w-8 h-8 rounded-full bg-brand-green-light hover:bg-brand-green-surface text-brand-beige flex items-center justify-center transition-all shrink-0 min-h-[36px]"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -87,7 +87,7 @@ export function OrderConfirmationModal() {
         </div>
 
         {/* Step Indicator */}
-        <div className="flex border-b border-brand-beige-dark/60 bg-brand-beige-light">
+        <div className="flex border-b border-brand-beige-dark/60 bg-brand-beige-light shrink-0">
           <div
             className={`flex-1 py-2 text-center text-xs font-bold border-b-2 transition-all ${
               step === 'details'
@@ -95,7 +95,7 @@ export function OrderConfirmationModal() {
                 : 'border-transparent text-brand-green/50'
             }`}
           >
-            1. Customer Details
+            1. Details
           </div>
           <div
             className={`flex-1 py-2 text-center text-xs font-bold border-b-2 transition-all ${
@@ -104,12 +104,12 @@ export function OrderConfirmationModal() {
                 : 'border-transparent text-brand-green/50'
             }`}
           >
-            2. Review & Confirm
+            2. Review & Place
           </div>
         </div>
 
         {/* Content Body */}
-        <div className="p-5 overflow-y-auto space-y-4">
+        <div className="p-4 sm:p-5 overflow-y-auto space-y-3.5 sm:space-y-4">
           {formError && (
             <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
@@ -125,18 +125,18 @@ export function OrderConfirmationModal() {
           )}
 
           {step === 'details' ? (
-            <div className="space-y-4">
+            <div className="space-y-3.5 sm:space-y-4">
               {/* Verified Table Banner */}
-              <div className="p-3.5 rounded-xl bg-brand-beige border border-brand-gold/30 flex items-center justify-between">
+              <div className="p-3 sm:p-3.5 rounded-xl bg-brand-beige border border-brand-gold/30 flex items-center justify-between gap-2">
                 <div>
                   <span className="text-[10px] uppercase font-bold tracking-wider text-brand-green/60">
-                    Verified Table Location
+                    Table Location
                   </span>
-                  <p className="font-extrabold text-sm text-brand-green">
+                  <p className="font-extrabold text-xs sm:text-sm text-brand-green">
                     {table ? `Table ${table.tableNumber.toString().padStart(2, '0')} (${table.name})` : 'Dine-In Area'}
                   </p>
                 </div>
-                <div className="flex items-center gap-1 text-emerald-700 font-bold text-xs bg-white/80 px-2.5 py-1 rounded-full border border-emerald-200">
+                <div className="flex items-center gap-1 text-emerald-700 font-bold text-xs bg-white/80 px-2.5 py-1 rounded-full border border-emerald-200 shrink-0">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>QR Verified</span>
                 </div>
@@ -145,7 +145,7 @@ export function OrderConfirmationModal() {
               {/* Customer Name */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-brand-green flex items-center gap-1.5">
-                  <User className="w-3.5 h-3.5 text-brand-green/70" />
+                  <User className="w-3.5 h-3.5 text-brand-green/70 shrink-0" />
                   <span>Full Name</span>
                   <span className="text-red-500">*</span>
                 </label>
@@ -156,15 +156,15 @@ export function OrderConfirmationModal() {
                     setCustomerDetails((prev) => ({ ...prev, name: e.target.value }))
                   }
                   placeholder="e.g. Rahul Patel"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-brand-beige-dark text-brand-green text-sm focus:outline-none focus:ring-2 focus:ring-brand-green shadow-xs"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-brand-beige-dark text-brand-green text-sm focus:outline-none focus:ring-2 focus:ring-brand-green shadow-xs min-h-[42px]"
                 />
               </div>
 
               {/* Mobile Number */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-brand-green flex items-center gap-1.5">
-                  <Phone className="w-3.5 h-3.5 text-brand-green/70" />
-                  <span>Mobile Number (for live order status SMS)</span>
+                  <Phone className="w-3.5 h-3.5 text-brand-green/70 shrink-0" />
+                  <span>Mobile Number (for live order status)</span>
                   <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -182,10 +182,10 @@ export function OrderConfirmationModal() {
                     }
                     placeholder="98765 43210"
                     maxLength={10}
-                    className="w-full pl-12 pr-3.5 py-2.5 rounded-xl bg-white border border-brand-beige-dark text-brand-green text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-green shadow-xs"
+                    className="w-full pl-12 pr-3.5 py-2.5 rounded-xl bg-white border border-brand-beige-dark text-brand-green text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-green shadow-xs min-h-[42px]"
                   />
                 </div>
-                <p className="text-[11px] text-brand-green/50">
+                <p className="text-[10px] sm:text-[11px] text-brand-green/50">
                   Required to send order updates & digital invoice receipt.
                 </p>
               </div>
@@ -193,7 +193,7 @@ export function OrderConfirmationModal() {
               {/* Special Instructions */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-brand-green flex items-center gap-1.5">
-                  <MessageSquare className="w-3.5 h-3.5 text-brand-green/70" />
+                  <MessageSquare className="w-3.5 h-3.5 text-brand-green/70 shrink-0" />
                   <span>Special Kitchen Instructions (Optional)</span>
                 </label>
                 <textarea
@@ -213,9 +213,9 @@ export function OrderConfirmationModal() {
             </div>
           ) : (
             /* Step 2: Summary Review */
-            <div className="space-y-4">
+            <div className="space-y-3.5 sm:space-y-4">
               {/* Customer & Table Recap */}
-              <div className="p-3.5 rounded-xl bg-brand-beige-light border border-brand-beige-dark text-xs space-y-1">
+              <div className="p-3 sm:p-3.5 rounded-xl bg-brand-beige-light border border-brand-beige-dark text-xs space-y-1">
                 <div className="flex justify-between">
                   <span className="text-brand-green/60">Customer:</span>
                   <span className="font-bold text-brand-green">{customerDetails.name}</span>
@@ -231,7 +231,7 @@ export function OrderConfirmationModal() {
                   </span>
                 </div>
                 {customerDetails.specialInstructions && (
-                  <div className="pt-1.5 border-t border-brand-beige-dark/50 text-brand-green/80 italic">
+                  <div className="pt-1.5 border-t border-brand-beige-dark/50 text-brand-green/80 italic break-words">
                     Note: &ldquo;{customerDetails.specialInstructions}&rdquo;
                   </div>
                 )}
@@ -247,7 +247,7 @@ export function OrderConfirmationModal() {
                       setIsCheckoutOpen(false);
                       setIsCartOpen(true);
                     }}
-                    className="text-brand-green underline hover:text-brand-green-hover"
+                    className="text-brand-green underline hover:text-brand-green-hover min-h-[32px] flex items-center"
                   >
                     Edit Cart
                   </button>
@@ -255,24 +255,24 @@ export function OrderConfirmationModal() {
 
                 <div className="divide-y divide-brand-beige-dark/50 bg-white rounded-xl border border-brand-beige-dark/70 overflow-hidden">
                   {cart.map((item) => (
-                    <div key={item.id} className="p-3 flex items-center justify-between text-xs">
-                      <div>
-                        <div className="font-bold text-brand-green">
+                    <div key={item.id} className="p-2.5 sm:p-3 flex items-center justify-between text-xs gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-bold text-brand-green leading-snug break-words">
                           {item.name}{' '}
                           <span className="font-mono text-brand-green/60">× {item.quantity}</span>
                         </div>
                         {item.selectedOptions && (
-                          <div className="text-[10px] text-brand-green/60">
+                          <div className="text-[10px] text-brand-green/60 break-words">
                             {Object.values(item.selectedOptions).join(', ')}
                           </div>
                         )}
                         {item.selectedAddOns && item.selectedAddOns.length > 0 && (
-                          <div className="text-[10px] text-brand-gold">
+                          <div className="text-[10px] text-brand-gold break-words">
                             {item.selectedAddOns.join(', ')}
                           </div>
                         )}
                       </div>
-                      <span className="font-mono font-bold text-brand-green">
+                      <span className="font-mono font-bold text-brand-green shrink-0">
                         ₹{(item.price * item.quantity).toFixed(0)}
                       </span>
                     </div>
@@ -281,7 +281,7 @@ export function OrderConfirmationModal() {
               </div>
 
               {/* Financial Totals */}
-              <div className="p-3.5 rounded-xl bg-white border border-brand-beige-dark space-y-1.5 text-xs">
+              <div className="p-3 sm:p-3.5 rounded-xl bg-white border border-brand-beige-dark space-y-1.5 text-xs">
                 <div className="flex justify-between text-brand-green/70">
                   <span>Subtotal</span>
                   <span className="font-mono">₹{subtotal.toFixed(2)}</span>
@@ -300,7 +300,7 @@ export function OrderConfirmationModal() {
         </div>
 
         {/* Modal Actions */}
-        <div className="p-4 bg-brand-beige-light border-t border-brand-beige-muted/60 flex items-center justify-between gap-3">
+        <div className="p-3.5 sm:p-4 bg-brand-beige-light border-t border-brand-beige-muted/60 flex flex-col-reverse xs:flex-row items-stretch xs:items-center justify-between gap-2.5 sm:gap-3 shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
           {step === 'details' ? (
             <>
               <button
@@ -309,14 +309,14 @@ export function OrderConfirmationModal() {
                   setIsCheckoutOpen(false);
                   setIsCartOpen(true);
                 }}
-                className="py-2.5 px-4 rounded-xl border border-brand-green text-brand-green hover:bg-brand-beige font-bold text-xs transition-colors"
+                className="py-2.5 sm:py-3 px-4 rounded-xl border border-brand-green text-brand-green hover:bg-brand-beige font-bold text-xs transition-colors min-h-[44px] flex items-center justify-center"
               >
                 Back to Cart
               </button>
               <button
                 type="button"
                 onClick={validateAndProceed}
-                className="flex-1 py-2.5 px-4 rounded-xl bg-brand-green hover:bg-brand-green-hover text-brand-beige font-bold text-xs shadow-md transition-all active:scale-95"
+                className="flex-1 py-2.5 sm:py-3 px-4 rounded-xl bg-brand-green hover:bg-brand-green-hover text-brand-beige font-bold text-xs shadow-md transition-all active:scale-95 min-h-[44px] flex items-center justify-center"
               >
                 Review Order Summary
               </button>
@@ -327,7 +327,7 @@ export function OrderConfirmationModal() {
                 type="button"
                 onClick={() => setStep('details')}
                 disabled={isPlacingOrder}
-                className="py-2.5 px-4 rounded-xl border border-brand-green text-brand-green hover:bg-brand-beige font-bold text-xs transition-colors disabled:opacity-50"
+                className="py-2.5 sm:py-3 px-4 rounded-xl border border-brand-green text-brand-green hover:bg-brand-beige font-bold text-xs transition-colors disabled:opacity-50 min-h-[44px] flex items-center justify-center"
               >
                 Edit Details
               </button>
@@ -335,16 +335,16 @@ export function OrderConfirmationModal() {
                 type="button"
                 onClick={handleConfirmOrder}
                 disabled={isPlacingOrder}
-                className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-60"
+                className="flex-1 py-2.5 sm:py-3 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs sm:text-sm shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-60 min-h-[44px]"
               >
                 {isPlacingOrder ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin shrink-0" />
                     <span>Sending to Kitchen...</span>
                   </>
                 ) : (
                   <>
-                    <CheckCircle2 className="w-4 h-4" />
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
                     <span>Confirm & Place Order (₹{total.toFixed(0)})</span>
                   </>
                 )}

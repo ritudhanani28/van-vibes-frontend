@@ -13,6 +13,7 @@ interface CartContextType {
   isCartOpen: boolean;
   isCheckoutOpen: boolean;
   isOrdersOpen: boolean;
+  isSearchOpen: boolean;
   activeCategory: string;
   searchQuery: string;
   isPlacingOrder: boolean;
@@ -33,6 +34,7 @@ interface CartContextType {
   setIsCartOpen: (open: boolean) => void;
   setIsCheckoutOpen: (open: boolean) => void;
   setIsOrdersOpen: (open: boolean) => void;
+  setIsSearchOpen: (open: boolean) => void;
   setActiveCategory: (category: string) => void;
   setSearchQuery: (query: string) => void;
 
@@ -64,6 +66,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isOrdersOpen, setIsOrdersOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
@@ -320,6 +323,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         isCartOpen,
         isCheckoutOpen,
         isOrdersOpen,
+        isSearchOpen,
         activeCategory,
         searchQuery,
         isPlacingOrder,
@@ -333,6 +337,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setIsCartOpen,
         setIsCheckoutOpen,
         setIsOrdersOpen,
+        setIsSearchOpen,
         setActiveCategory,
         setSearchQuery,
         itemCount,

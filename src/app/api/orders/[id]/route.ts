@@ -24,7 +24,7 @@ export async function PATCH(
 
   try {
     const body = await request.json();
-    const { status, paymentStatus } = body;
+    const { status, paymentStatus, source } = body;
 
     let updatedOrder;
 
@@ -42,6 +42,18 @@ export async function PATCH(
       if (!validStatuses.includes(status)) {
         return NextResponse.json(
           { error: `Invalid order status: ${status}` },
+          { status: 400 }
+        );
+      }
+
+      const existing = CafeStore.getOrderById(id);
+      if (!existing) {
+        return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+      }
+
+      if (status === 'CANCELLED' && source === 'customer' && existing.status !== 'ORDER_PLACED') {
+        return NextResponse.json(
+          { error: 'Order cannot be cancelled once accepted by the kitchen' },
           { status: 400 }
         );
       }

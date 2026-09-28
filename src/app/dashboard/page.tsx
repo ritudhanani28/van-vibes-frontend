@@ -115,8 +115,14 @@ export default function CafeDashboardPage() {
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
       // Status filter
-      if (selectedStatus !== 'ALL' && order.status !== selectedStatus) {
-        return false;
+      if (selectedStatus !== 'ALL') {
+        if (selectedStatus === 'ACCEPTED') {
+          if (!['ACCEPTED', 'PREPARING', 'READY'].includes(order.status)) return false;
+        } else if (selectedStatus === 'COMPLETED') {
+          if (!['COMPLETED', 'SERVED'].includes(order.status)) return false;
+        } else if (order.status !== selectedStatus) {
+          return false;
+        }
       }
       // Search filter
       if (searchQuery.trim()) {
@@ -136,125 +142,126 @@ export default function CafeDashboardPage() {
     <div className="min-h-screen bg-brand-beige-light text-brand-green font-sans flex flex-col">
       {/* Dashboard Top Navbar */}
       <header className="bg-brand-green text-brand-beige border-b border-brand-green-light sticky top-0 z-30 shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="w-9 h-9 rounded-full bg-brand-beige text-brand-green font-bold flex items-center justify-center text-base shadow-sm">
-              वा
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <Link href="/" className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-brand-beige text-brand-green font-black flex items-center justify-center text-base sm:text-lg shadow-sm shrink-0">
+              व
             </Link>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="font-extrabold text-lg sm:text-xl tracking-tight text-brand-beige">
-                  Vaan Vibes — Cafe Management
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                <h1 className="font-extrabold text-base sm:text-xl tracking-tight text-brand-beige">
+                  वन VIBES — Vaan Vibes
                 </h1>
-                <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded bg-brand-gold text-brand-green">
+                <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest px-1.5 sm:px-2 py-0.5 rounded bg-brand-gold text-brand-green whitespace-nowrap">
                   Staff Console
                 </span>
               </div>
-              <p className="text-xs text-brand-beige-muted">
+              <p className="text-[10px] sm:text-xs text-brand-beige-muted">
                 Live Orders, Table QR Management & POS Billing
               </p>
             </div>
           </div>
 
           {/* Quick Actions & Navigation */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 flex-wrap">
             <Link
               href="/chef"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-green-light hover:bg-brand-green-surface border border-brand-gold/30 text-brand-beige text-xs font-bold transition-all shadow-xs"
+              className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-brand-green-light hover:bg-brand-green-surface border border-brand-gold/30 text-brand-beige text-xs font-bold transition-all shadow-xs min-h-[34px]"
             >
               <ChefHat className="w-3.5 h-3.5 text-brand-gold" />
-              <span>Chef Kitchen KDS</span>
+              <span>Chef KDS</span>
             </Link>
 
             <Link
-              href="/cafe/vaan-vibes/menu?table=T01&token=vv_sec_t01_2901c"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-beige text-brand-green hover:bg-brand-beige-dark text-xs font-bold transition-all shadow-xs"
+              href="/cafe/van-vibes/menu?table=T12&token=vv_sec_t12_1a5df"
+              className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-brand-beige text-brand-green hover:bg-brand-beige-dark text-xs font-bold transition-all shadow-xs min-h-[34px]"
               target="_blank"
             >
               <ExternalLink className="w-3.5 h-3.5" />
-              <span>Customer Menu View</span>
+              <span className="hidden xs:inline">Customer Menu</span>
+              <span className="xs:hidden">Menu</span>
             </Link>
 
             <button
               onClick={handleRefresh}
-              className="w-8 h-8 rounded-full bg-brand-green-light hover:bg-brand-green-surface text-brand-beige flex items-center justify-center transition-all"
+              className="w-8 h-8 rounded-full bg-brand-green-light hover:bg-brand-green-surface text-brand-beige flex items-center justify-center transition-all shrink-0 min-h-[34px]"
               title="Refresh"
             >
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
           </div>
         </div>
       </header>
 
       {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex-1 w-full space-y-6">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6 flex-1 w-full space-y-4 sm:space-y-6">
         {/* KPI Metrics Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <div className="p-4 rounded-2xl bg-white border border-brand-beige-dark shadow-xs space-y-1">
-            <div className="flex items-center justify-between text-brand-green/60 text-xs font-bold uppercase tracking-wider">
+        <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-white border border-brand-beige-dark shadow-xs space-y-1">
+            <div className="flex items-center justify-between text-brand-green/60 text-[10px] sm:text-xs font-bold uppercase tracking-wider">
               <span>Total Orders</span>
               <Clock className="w-4 h-4 text-brand-green/40" />
             </div>
-            <div className="font-mono font-black text-2xl text-brand-green">{metrics.totalOrders}</div>
-            <p className="text-[11px] text-brand-green/50">Recorded across tables</p>
+            <div className="font-mono font-black text-xl sm:text-2xl text-brand-green">{metrics.totalOrders}</div>
+            <p className="text-[10px] sm:text-[11px] text-brand-green/50">Recorded across tables</p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white border border-brand-beige-dark shadow-xs space-y-1">
-            <div className="flex items-center justify-between text-amber-700 text-xs font-bold uppercase tracking-wider">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-white border border-brand-beige-dark shadow-xs space-y-1">
+            <div className="flex items-center justify-between text-amber-700 text-[10px] sm:text-xs font-bold uppercase tracking-wider">
               <span>Kitchen Pending</span>
               <ChefHat className="w-4 h-4 text-amber-600" />
             </div>
-            <div className="font-mono font-black text-2xl text-amber-700">{metrics.activeKitchen}</div>
-            <p className="text-[11px] text-amber-800/70">Needs chef preparation</p>
+            <div className="font-mono font-black text-xl sm:text-2xl text-amber-700">{metrics.activeKitchen}</div>
+            <p className="text-[10px] sm:text-[11px] text-amber-800/70">Needs chef preparation</p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white border border-brand-beige-dark shadow-xs space-y-1">
-            <div className="flex items-center justify-between text-emerald-700 text-xs font-bold uppercase tracking-wider">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-white border border-brand-beige-dark shadow-xs space-y-1">
+            <div className="flex items-center justify-between text-emerald-700 text-[10px] sm:text-xs font-bold uppercase tracking-wider">
               <span>Occupied Tables</span>
               <Users className="w-4 h-4 text-emerald-600" />
             </div>
-            <div className="font-mono font-black text-2xl text-emerald-700">
+            <div className="font-mono font-black text-xl sm:text-2xl text-emerald-700">
               {metrics.occupiedTables} / {tables.length}
             </div>
-            <p className="text-[11px] text-emerald-800/70">Dine-in tables active</p>
+            <p className="text-[10px] sm:text-[11px] text-emerald-800/70">Dine-in tables active</p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white border border-brand-beige-dark shadow-xs space-y-1">
-            <div className="flex items-center justify-between text-brand-green text-xs font-bold uppercase tracking-wider">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-white border border-brand-beige-dark shadow-xs space-y-1">
+            <div className="flex items-center justify-between text-brand-green text-[10px] sm:text-xs font-bold uppercase tracking-wider">
               <span>Paid Revenue</span>
               <DollarSign className="w-4 h-4 text-brand-gold" />
             </div>
-            <div className="font-mono font-black text-2xl text-brand-green">
+            <div className="font-mono font-black text-xl sm:text-2xl text-brand-green">
               ₹{metrics.revenue.toFixed(0)}
             </div>
-            <p className="text-[11px] text-brand-green/50">Settled customer payments</p>
+            <p className="text-[10px] sm:text-[11px] text-brand-green/50">Settled customer payments</p>
           </div>
         </div>
 
         {/* Tab Switcher: Orders vs Table QR Manager */}
-        <div className="flex border-b border-brand-beige-dark/70 gap-2">
+        <div className="flex border-b border-brand-beige-dark/70 gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar">
           <button
             onClick={() => setActiveTab('orders')}
-            className={`py-3 px-5 font-bold text-xs sm:text-sm border-b-2 flex items-center gap-2 transition-all ${
+            className={`py-2.5 sm:py-3 px-3.5 sm:px-5 font-bold text-xs sm:text-sm border-b-2 flex items-center gap-1.5 sm:gap-2 transition-all whitespace-nowrap min-h-[40px] ${
               activeTab === 'orders'
                 ? 'border-brand-green text-brand-green bg-white rounded-t-xl'
                 : 'border-transparent text-brand-green/60 hover:text-brand-green'
             }`}
           >
-            <LayoutDashboard className="w-4 h-4" />
-            <span>Order Management ({orders.length})</span>
+            <LayoutDashboard className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span>Orders ({orders.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('tables')}
-            className={`py-3 px-5 font-bold text-xs sm:text-sm border-b-2 flex items-center gap-2 transition-all ${
+            className={`py-2.5 sm:py-3 px-3.5 sm:px-5 font-bold text-xs sm:text-sm border-b-2 flex items-center gap-1.5 sm:gap-2 transition-all whitespace-nowrap min-h-[40px] ${
               activeTab === 'tables'
                 ? 'border-brand-green text-brand-green bg-white rounded-t-xl'
                 : 'border-transparent text-brand-green/60 hover:text-brand-green'
             }`}
           >
-            <QrCode className="w-4 h-4" />
-            <span>Table QR Code Manager ({tables.length} Tables)</span>
+            <QrCode className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span>Table QR Manager ({tables.length})</span>
           </button>
         </div>
 
@@ -278,12 +285,9 @@ export default function CafeDashboardPage() {
               {/* Status Pills */}
               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
                 {[
-                  { id: 'ALL', label: 'All' },
-                  { id: 'ORDER_PLACED', label: 'New' },
-                  { id: 'ACCEPTED', label: 'Accepted' },
-                  { id: 'PREPARING', label: 'Preparing' },
-                  { id: 'READY', label: 'Ready' },
-                  { id: 'SERVED', label: 'Served' },
+                  { id: 'ALL', label: 'All Orders' },
+                  { id: 'ORDER_PLACED', label: 'Order Placed' },
+                  { id: 'ACCEPTED', label: 'Order Accepted' },
                   { id: 'COMPLETED', label: 'Completed' },
                   { id: 'CANCELLED', label: 'Cancelled' },
                 ].map((st) => (
@@ -342,21 +346,23 @@ export default function CafeDashboardPage() {
 
                         {/* Order Status Badge */}
                         <span
-                          className={`px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wide border ${
-                            order.status === 'READY'
-                              ? 'bg-purple-50 text-purple-800 border-purple-200'
-                              : order.status === 'PREPARING'
-                              ? 'bg-amber-50 text-amber-800 border-amber-200'
-                              : order.status === 'ACCEPTED'
-                              ? 'bg-blue-50 text-blue-800 border-blue-200'
-                              : order.status === 'SERVED' || order.status === 'COMPLETED'
-                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                          className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wide border shadow-2xs ${
+                            order.status === 'COMPLETED' || order.status === 'SERVED'
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                              : order.status === 'ACCEPTED' || order.status === 'PREPARING' || order.status === 'READY'
+                              ? 'bg-blue-50 text-blue-800 border-blue-300'
                               : order.status === 'CANCELLED'
-                              ? 'bg-red-50 text-red-800 border-red-200'
-                              : 'bg-brand-beige text-brand-green border-brand-beige-dark'
+                              ? 'bg-red-50 text-red-800 border-red-300'
+                              : 'bg-amber-50 text-amber-900 border-amber-300'
                           }`}
                         >
-                          {order.status.replace('_', ' ')}
+                          {order.status === 'ORDER_PLACED'
+                            ? 'Order Placed'
+                            : order.status === 'ACCEPTED' || order.status === 'PREPARING' || order.status === 'READY'
+                            ? 'Order Accepted'
+                            : order.status === 'COMPLETED' || order.status === 'SERVED'
+                            ? 'Completed'
+                            : order.status.replace('_', ' ')}
                         </span>
                       </div>
 
@@ -450,45 +456,37 @@ export default function CafeDashboardPage() {
 
                       {/* Action Buttons Row */}
                       <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                        <div className="flex items-center gap-1.5 flex-wrap">
+                        <div className="flex items-center gap-2 flex-wrap">
                           {order.status === 'ORDER_PLACED' && (
                             <button
                               onClick={() => handleUpdateStatus(order.id, 'ACCEPTED')}
-                              className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-2xs transition-all"
+                              className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-2xs transition-all flex items-center gap-1.5"
                             >
-                              Accept Order
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Accept Order</span>
                             </button>
                           )}
-                          {(order.status === 'ORDER_PLACED' || order.status === 'ACCEPTED') && (
-                            <button
-                              onClick={() => handleUpdateStatus(order.id, 'PREPARING')}
-                              className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-2xs transition-all"
-                            >
-                              Start Preparing
-                            </button>
-                          )}
-                          {order.status === 'PREPARING' && (
-                            <button
-                              onClick={() => handleUpdateStatus(order.id, 'READY')}
-                              className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-2xs transition-all"
-                            >
-                              Mark Ready
-                            </button>
-                          )}
-                          {order.status === 'READY' && (
-                            <button
-                              onClick={() => handleUpdateStatus(order.id, 'SERVED')}
-                              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-2xs transition-all"
-                            >
-                              Mark Served
-                            </button>
-                          )}
-                          {order.status === 'SERVED' && (
+                          {(order.status === 'ACCEPTED' || order.status === 'PREPARING' || order.status === 'READY' || order.status === 'SERVED') && (
                             <button
                               onClick={() => handleUpdateStatus(order.id, 'COMPLETED')}
-                              className="px-3 py-1.5 rounded-lg bg-brand-green hover:bg-brand-green-hover text-brand-beige font-bold text-xs shadow-2xs transition-all"
+                              className="px-3.5 py-1.5 rounded-lg bg-brand-green hover:bg-brand-green-hover text-brand-beige font-bold text-xs shadow-2xs transition-all flex items-center gap-1.5"
                             >
-                              Complete Order
+                              <CheckCircle2 className="w-3.5 h-3.5 text-brand-gold" />
+                              <span>Complete Order</span>
+                            </button>
+                          )}
+                          {order.status === 'COMPLETED' && (
+                            <span className="px-3 py-1.5 rounded-lg bg-emerald-100 text-emerald-800 font-extrabold text-xs flex items-center gap-1.5">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>Completed</span>
+                            </span>
+                          )}
+                          {order.status !== 'COMPLETED' && order.status !== 'CANCELLED' && (
+                            <button
+                              onClick={() => handleUpdateStatus(order.id, 'CANCELLED')}
+                              className="px-2.5 py-1.5 rounded-lg text-red-600 hover:bg-red-50 border border-red-200 font-bold text-xs transition-all"
+                            >
+                              Cancel
                             </button>
                           )}
                         </div>
@@ -574,7 +572,7 @@ export default function CafeDashboardPage() {
                     </div>
                     <div className="space-y-0.5">
                       <p className="text-[11px] font-bold text-brand-green">
-                        वान VIBES • Table {tbl.tableNumber}
+                        वन VIBES • Table {tbl.tableNumber}
                       </p>
                       <p className="text-[9px] text-brand-green/60 font-mono truncate max-w-[180px]">
                         {tbl.token}

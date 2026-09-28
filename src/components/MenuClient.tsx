@@ -9,8 +9,10 @@ import { FoodCard } from '@/components/FoodCard';
 import { CartDrawer } from '@/components/CartDrawer';
 import { OrderConfirmationModal } from '@/components/OrderConfirmationModal';
 import { OrderTrackingModal } from '@/components/OrderTrackingModal';
+import { SearchModal } from '@/components/SearchModal';
+import { ScrollReveal } from '@/components/ScrollReveal';
 import { MENU_ITEMS, MENU_CATEGORIES } from '@/data/vaan-vibes-menu';
-import { ShoppingBag, AlertTriangle, ArrowRight, ShieldCheck } from 'lucide-react';
+import { ShoppingBag, AlertTriangle, ArrowRight, ShieldCheck, Search } from 'lucide-react';
 import Link from 'next/link';
 
 export function MenuClient({ defaultCafeId }: { defaultCafeId?: string }) {
@@ -23,6 +25,7 @@ export function MenuClient({ defaultCafeId }: { defaultCafeId?: string }) {
     table,
     activeCategory,
     searchQuery,
+    setSearchQuery,
     itemCount,
     total,
     setIsCartOpen,
@@ -37,27 +40,27 @@ export function MenuClient({ defaultCafeId }: { defaultCafeId?: string }) {
       setIsValidating(true);
       setValidationError(null);
 
-      // If no query params provided, check if already in local storage or ask user to scan
+      // If no query params provided, automatically load Table 12 so customer sees menu directly
       if (!tableParam || !tokenParam) {
-        // Fallback to Table 01 for demo if no params
         try {
-          const fallbackRes = await fetch('/api/qr/validate?table=T01&token=vv_sec_t01_2901c');
-          const data = await fallbackRes.json();
-          if (data.valid && data.table) {
-            setTable(data.table);
+          const res = await fetch('/api/tables');
+          const data = await res.json();
+          if (data.tables && data.tables.length > 0) {
+            const defaultTable =
+              data.tables.find((t: any) => t.tableNumber === 12) || data.tables[0];
+            setTable(defaultTable);
             setIsValidating(false);
             return;
           }
         } catch {
           // ignore
         }
-        setValidationError('No table QR parameters found. Please scan the official table standee.');
-        setIsValidating(false);
-        return;
       }
 
       try {
-        const res = await fetch(`/api/qr/validate?table=${encodeURIComponent(tableParam)}&token=${encodeURIComponent(tokenParam)}`);
+        const res = await fetch(
+          `/api/qr/validate?table=${encodeURIComponent(tableParam)}&token=${encodeURIComponent(tokenParam)}`
+        );
         const data = await res.json();
 
         if (!res.ok || !data.valid) {
@@ -90,31 +93,54 @@ export function MenuClient({ defaultCafeId }: { defaultCafeId?: string }) {
     // Filter by search query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
-      items = items.filter(
-        (i) =>
-          i.name.toLowerCase().includes(q) ||
-          i.category.toLowerCase().includes(q) ||
-          (i.description && i.description.toLowerCase().includes(q))
-      );
+      const qWords = q.split(/\s+/).filter(Boolean);
+
+      items = items.filter((i) => {
+        const name = i.name.toLowerCase();
+        const categorySlug = i.category.toLowerCase();
+        const categoryName = (
+          MENU_CATEGORIES.find((c) => c.slug === i.category)?.name || ''
+        ).toLowerCase();
+        const desc = (i.description || '').toLowerCase();
+
+        // Exact match
+        if (
+          name.includes(q) ||
+          categorySlug.includes(q) ||
+          categoryName.includes(q) ||
+          desc.includes(q)
+        ) {
+          return true;
+        }
+
+        // Multi-word search
+        return qWords.every(
+          (w) =>
+            name.includes(w) ||
+            categorySlug.includes(w) ||
+            categoryName.includes(w) ||
+            desc.includes(w)
+        );
+      });
     }
 
     return items;
   }, [activeCategory, searchQuery]);
 
-  // Group items by category when 'all' is selected and no search
+  // Group items by category whenever 'all' is selected (with or without search query)
   const groupedItems = useMemo(() => {
-    if (activeCategory !== 'all' || searchQuery.trim()) return null;
+    if (activeCategory !== 'all') return null;
 
     const groups: { category: (typeof MENU_CATEGORIES)[0]; items: typeof MENU_ITEMS }[] = [];
     for (const cat of MENU_CATEGORIES) {
       if (cat.id === 'all') continue;
-      const matching = MENU_ITEMS.filter((i) => i.category === cat.slug);
+      const matching = filteredItems.filter((i) => i.category === cat.slug);
       if (matching.length > 0) {
         groups.push({ category: cat, items: matching });
       }
     }
-    return groups;
-  }, [activeCategory, searchQuery]);
+    return groups.length > 0 ? groups : null;
+  }, [activeCategory, filteredItems]);
 
   return (
     <div className="min-h-screen bg-brand-beige-light flex flex-col font-sans pb-24">
@@ -148,26 +174,56 @@ export function MenuClient({ defaultCafeId }: { defaultCafeId?: string }) {
       <CategoryNav />
 
       {/* Main Content Area */}
-      <main className="max-w-6xl mx-auto px-4 pt-4 flex-1 w-full space-y-6">
-        {/* Verified Table Greeting Card */}
+      <main className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4 flex-1 w-full space-y-4 sm:space-y-6">
+        {/* Verified Table Greeting Card with Smooth Hero Entrance Sequence */}
         {table && (
-          <div className="p-4 rounded-2xl bg-gradient-to-r from-brand-green to-brand-green-surface text-brand-beige shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xl">☕</span>
-                <h2 className="font-extrabold text-base sm:text-lg">
-                  Welcome to Table {table.tableNumber.toString().padStart(2, '0')} at Vaan Vibes!
-                </h2>
+          <ScrollReveal direction="up" distance={16} duration={480} delay={40}>
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-brand-green to-brand-green-surface text-brand-beige shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg sm:text-xl">☕</span>
+                  <h2 className="font-black text-sm sm:text-base md:text-lg leading-snug">
+                    Welcome to Table {table.tableNumber.toString().padStart(2, '0')} at Vaan Vibes Cafe & Restro!
+                  </h2>
+                </div>
+                <p className="text-[11px] sm:text-xs text-brand-beige-muted mt-0.5 leading-relaxed">
+                  वन VIBES • Authentic handcrafted beverages, continental & indian delicacies. Order straight from your seat.
+                </p>
               </div>
-              <p className="text-xs text-brand-beige-muted mt-0.5">
-                Authentic handcrafted beverages, continental & indian delicacies. Order straight from your seat.
-              </p>
+              <div className="flex items-center gap-1.5 bg-brand-gold/20 text-brand-gold border border-brand-gold/40 px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-semibold shrink-0">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Verified Session</span>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5 bg-brand-gold/20 text-brand-gold border border-brand-gold/40 px-3 py-1 rounded-full text-xs font-semibold">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Verified Session</span>
+          </ScrollReveal>
+        )}
+
+        {/* Active Search Results Banner */}
+        {searchQuery.trim() && (
+          <ScrollReveal direction="up" distance={12} duration={350}>
+            <div className="p-3 sm:p-3.5 rounded-2xl bg-white border border-brand-beige-dark shadow-xs flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2.5 sm:gap-3 animate-in fade-in duration-200">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-brand-beige flex items-center justify-center text-brand-green shrink-0">
+                  <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </div>
+                <div>
+                  <p className="font-bold text-xs sm:text-sm text-brand-green">
+                    Showing results for &ldquo;{searchQuery}&rdquo;
+                  </p>
+                  <p className="text-[10px] sm:text-[11px] text-brand-green/60">
+                    {filteredItems.length} {filteredItems.length === 1 ? 'dish' : 'dishes'} found
+                    {groupedItems && ` across ${groupedItems.length} food ${groupedItems.length === 1 ? 'section' : 'sections'}`}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSearchQuery('')}
+                className="text-xs font-bold text-brand-green hover:text-brand-green-hover bg-brand-beige-light hover:bg-brand-beige px-3 py-1.5 rounded-xl border border-brand-beige-dark transition-all shrink-0 min-h-[36px]"
+              >
+                Clear Search
+              </button>
             </div>
-          </div>
+          </ScrollReveal>
         )}
 
         {/* Loading State */}
@@ -178,29 +234,34 @@ export function MenuClient({ defaultCafeId }: { defaultCafeId?: string }) {
           </div>
         ) : filteredItems.length === 0 ? (
           /* Empty Search State */
-          <div className="py-16 text-center space-y-2">
+          <div className="py-16 text-center space-y-2 px-4">
             <p className="font-extrabold text-base text-brand-green">No matching items found</p>
-            <p className="text-xs text-brand-green/60">
+            <p className="text-xs text-brand-green/60 max-w-sm mx-auto">
               Try searching with another keyword or pick a category from the navigation bar.
             </p>
           </div>
         ) : groupedItems ? (
           /* Grouped Categorized View (when 'All' is selected) */
-          <div className="space-y-8">
+          <div className="space-y-6 sm:space-y-8">
             {groupedItems.map((group) => (
-              <section key={group.category.id} className="space-y-3">
-                <div className="flex items-center gap-2 pb-1 border-b border-brand-beige-dark/60">
-                  <span className="text-lg">{group.category.icon}</span>
-                  <h3 className="font-extrabold text-base sm:text-lg text-brand-green">
-                    {group.category.name}
-                  </h3>
-                  <span className="text-xs text-brand-green/50 font-semibold font-mono">
-                    ({group.items.length})
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                  {group.items.map((item) => (
-                    <FoodCard key={item.id} item={item} />
+              <section key={group.category.id} className="space-y-2.5 sm:space-y-3">
+                {/* Section heading appears slightly before cards */}
+                <ScrollReveal direction="up" distance={12} duration={350} delay={0}>
+                  <div className="flex items-center gap-2 pb-1 border-b border-brand-beige-dark/60">
+                    <span className="text-base sm:text-lg">{group.category.icon}</span>
+                    <h3 className="font-extrabold text-sm sm:text-base md:text-lg text-brand-green">
+                      {group.category.name}
+                    </h3>
+                    <span className="text-xs text-brand-green/50 font-semibold font-mono">
+                      ({group.items.length})
+                    </span>
+                  </div>
+                </ScrollReveal>
+
+                {/* Staggered Cards Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                  {group.items.map((item, idx) => (
+                    <FoodCard key={item.id} item={item} index={idx} />
                   ))}
                 </div>
               </section>
@@ -212,40 +273,40 @@ export function MenuClient({ defaultCafeId }: { defaultCafeId?: string }) {
             <div className="flex items-center justify-between text-xs text-brand-green/60 px-1">
               <span>Showing {filteredItems.length} delicious items</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-              {filteredItems.map((item) => (
-                <FoodCard key={item.id} item={item} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              {filteredItems.map((item, idx) => (
+                <FoodCard key={item.id} item={item} index={idx} />
               ))}
             </div>
           </div>
         )}
       </main>
 
-      {/* Floating Sticky Cart Bar (Always accessible for mobile users) */}
+      {/* Floating Sticky Cart Bar (Always accessible on mobile & tablet) */}
       {itemCount > 0 && (
-        <div className="fixed bottom-3 inset-x-0 z-40 px-4 max-w-lg mx-auto pointer-events-none">
+        <div className="fixed bottom-3 sm:bottom-4 inset-x-0 z-40 px-3 sm:px-4 max-w-lg mx-auto pointer-events-none pb-[env(safe-area-inset-bottom,0px)]">
           <button
             type="button"
             onClick={() => setIsCartOpen(true)}
-            className="w-full py-3 px-5 rounded-2xl bg-brand-green hover:bg-brand-green-hover text-brand-beige flex items-center justify-between shadow-2xl border border-brand-gold/40 pointer-events-auto active:scale-[0.99] transition-all"
+            className="w-full py-2.5 sm:py-3 px-4 sm:px-5 rounded-2xl bg-brand-green hover:bg-brand-green-hover text-brand-beige flex items-center justify-between shadow-2xl border border-brand-gold/40 pointer-events-auto active:scale-[0.99] transition-all min-h-[48px]"
           >
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-brand-beige text-brand-green flex items-center justify-center font-bold text-xs">
+            <div className="flex items-center gap-2 sm:gap-2.5">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-brand-beige text-brand-green flex items-center justify-center font-bold text-xs shrink-0">
                 {itemCount}
               </div>
               <div className="text-left">
                 <p className="font-extrabold text-xs sm:text-sm text-brand-beige">View Your Order</p>
-                <p className="text-[11px] text-brand-beige-muted">
+                <p className="text-[10px] sm:text-[11px] text-brand-beige-muted">
                   {itemCount} {itemCount === 1 ? 'item' : 'items'} in cart
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="font-mono font-black text-base text-brand-gold">
+              <span className="font-mono font-black text-sm sm:text-base text-brand-gold">
                 ₹{total.toFixed(0)}
               </span>
-              <div className="w-6 h-6 rounded-full bg-brand-gold text-brand-green flex items-center justify-center">
+              <div className="w-6 h-6 rounded-full bg-brand-gold text-brand-green flex items-center justify-center shrink-0">
                 <ArrowRight className="w-3.5 h-3.5" />
               </div>
             </div>
@@ -254,6 +315,7 @@ export function MenuClient({ defaultCafeId }: { defaultCafeId?: string }) {
       )}
 
       {/* Modals & Drawers */}
+      <SearchModal />
       <CartDrawer />
       <OrderConfirmationModal />
       <OrderTrackingModal />

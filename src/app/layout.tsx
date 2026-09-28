@@ -33,7 +33,7 @@ const generalSans = localFont({
 
 export const metadata: Metadata = {
   title: {
-    default: `${SiteConfig.hindiName} (${SiteConfig.name}) — Restro & Cafe`,
+    default: `${SiteConfig.hindiName} (${SiteConfig.name}) — Cafe & Restro`,
     template: `%s | ${SiteConfig.name}`,
   },
   description: SiteConfig.description,

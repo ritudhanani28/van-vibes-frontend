@@ -201,8 +201,8 @@ export function BillModal({ orderId, onClose }: Props) {
 
               {/* Receipt Footer Message */}
               <div className="text-center pt-4 text-[10px] text-brand-green/60 space-y-1">
-                <p>Thank you for dining at Vaan Vibes!</p>
-                <p>Follow us on Instagram: @vaanvibes</p>
+                <p>Thank you for dining at Vaan Vibes Cafe & Restro!</p>
+                <p>Follow us on Instagram: @vanvibes</p>
                 <p>*** Please visit again ***</p>
               </div>
             </div>

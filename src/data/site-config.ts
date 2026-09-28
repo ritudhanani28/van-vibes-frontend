@@ -1,10 +1,10 @@
 import type { HubLocation, NavGroup, NavLink } from '@/types/site';
 
 export const SiteConfig = {
-  name: process.env.NEXT_PUBLIC_APP_NAME || 'Vaan Vibes',
-  hindiName: 'वान VIBES',
-  tagline: process.env.NEXT_PUBLIC_APP_TAGLINE || 'Restro & Cafe • Taste the Vibe',
-  title: 'Vaan Vibes — Restro & Cafe | QR Ordering & Digital Menu',
+  name: process.env.NEXT_PUBLIC_APP_NAME || 'Vaan Vibes Cafe & Restro',
+  hindiName: 'वन VIBES',
+  tagline: process.env.NEXT_PUBLIC_APP_TAGLINE || 'Cafe & Restro • Taste the Vibe',
+  title: 'Vaan Vibes Cafe & Restro — Digital QR Menu & Ordering',
   description:
     process.env.NEXT_PUBLIC_APP_DESCRIPTION ||
     'A vibrant restro and cafe serving artisanal coffee, gourmet continental & indian cuisine, refreshing drinks, and memorable moments in a warm, aesthetic atmosphere.',
