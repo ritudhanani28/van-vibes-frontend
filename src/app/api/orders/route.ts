@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchFromBackend } from '@/lib/backend-api';
+import { CafeStore } from '@/lib/cafe-store';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -21,39 +22,101 @@ export async function GET(request: NextRequest) {
     }
 
     const res = await fetchFromBackend(endpoint);
-    if (!res.ok) {
-      return NextResponse.json({ orders: [] });
+    if (res.ok) {
+      const orders = await res.json();
+      return NextResponse.json({ orders });
     }
-    const orders = await res.json();
-    return NextResponse.json({ orders });
   } catch {
-    return NextResponse.json({ orders: [] });
+    // Proceed to local fallback
   }
+
+  if (all) {
+    const orders = CafeStore.getAllOrders();
+    return NextResponse.json({ orders });
+  }
+
+  if (tableId) {
+    const orders = CafeStore.getOrdersBySession(tableId, sessionToken);
+    return NextResponse.json({ orders });
+  }
+
+  return NextResponse.json({ orders: [] });
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const res = await fetchFromBackend('/api/v1/orders', {
-      method: 'POST',
-      body: JSON.stringify(body),
+    const { tableId, token, sessionToken, diningSessionId, customerName, customerMobile, specialInstructions, items } = body;
+
+    // 1. Forward to FastAPI backend if available
+    try {
+      const backendRes = await fetchFromBackend('/api/v1/orders', {
+        method: 'POST',
+        body: JSON.stringify({
+          tableId,
+          token,
+          sessionToken: sessionToken || '',
+          diningSessionId: diningSessionId || undefined,
+          customerName,
+          customerMobile,
+          specialInstructions,
+          items,
+        }),
+      });
+
+      if (backendRes.ok) {
+        const backendOrder = await backendRes.json();
+        // Sync local cache
+        CafeStore.createOrder({
+          tableId,
+          token,
+          sessionToken: backendOrder.sessionToken || backendOrder.diningSessionId || sessionToken,
+          customerName,
+          customerMobile,
+          specialInstructions,
+          items,
+        });
+
+        return NextResponse.json({
+          success: true,
+          message: 'Order created successfully!',
+          order: backendOrder,
+        });
+      } else if (backendRes.status >= 400 && backendRes.status < 500) {
+        const errorData = await backendRes.json().catch(() => ({}));
+        const detail = errorData.detail || errorData.error || 'Failed to place order';
+        return NextResponse.json({ success: false, error: detail }, { status: backendRes.status });
+      }
+    } catch {
+      // Backend unavailable; proceed to local store
+    }
+
+    // 2. Offline / local fallback to CafeStore
+    const result = CafeStore.createOrder({
+      tableId,
+      token,
+      sessionToken,
+      customerName,
+      customerMobile,
+      specialInstructions,
+      items,
     });
 
-    const data = await res.json();
-    if (!res.ok) {
+    if (!result.success || !result.order) {
       return NextResponse.json(
-        { success: false, error: data.detail || 'Failed to place order' },
-        { status: res.status }
+        { success: false, error: result.error || 'Failed to place order' },
+        { status: 400 }
       );
     }
 
     return NextResponse.json({
       success: true,
       message: 'Order created successfully!',
-      order: data,
+      order: result.order,
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Invalid request payload';
     return NextResponse.json({ success: false, error: msg }, { status: 500 });
   }
 }
+

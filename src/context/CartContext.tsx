@@ -1,9 +1,12 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useSyncExternalStore } from 'react';
 import { CartItem, CustomerDetails, MenuItem, Order, TableInfo } from '@/types/cafe';
 
+const emptySubscribe = () => () => {};
+
 interface CartContextType {
+  isHydrated: boolean;
   cart: CartItem[];
   table: TableInfo | null;
   sessionToken: string;
@@ -51,13 +54,54 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [table, setTableState] = useState<TableInfo | null>(null);
-  const [sessionToken, setSessionToken] = useState<string>('');
-  const [customerDetails, setCustomerDetails] = useState<CustomerDetails>({
-    name: '',
-    mobile: '',
-    specialInstructions: '',
+  const isHydrated = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
+
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const savedCart = localStorage.getItem('vv_cart');
+      return savedCart ? JSON.parse(savedCart) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [table, setTableState] = useState<TableInfo | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const savedTable = localStorage.getItem('vv_table');
+      return savedTable ? JSON.parse(savedTable) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [sessionToken, setSessionToken] = useState<string>(() => {
+    if (typeof window === 'undefined') return '';
+    try {
+      let token = localStorage.getItem('vv_session_token');
+      if (!token) {
+        token = `sess_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        localStorage.setItem('vv_session_token', token);
+      }
+      return token;
+    } catch {
+      return '';
+    }
+  });
+
+  const [customerDetails, setCustomerDetails] = useState<CustomerDetails>(() => {
+    if (typeof window === 'undefined') return { name: '', mobile: '', specialInstructions: '' };
+    try {
+      const savedCustomer = localStorage.getItem('vv_customer');
+      return savedCustomer ? JSON.parse(savedCustomer) : { name: '', mobile: '', specialInstructions: '' };
+    } catch {
+      return { name: '', mobile: '', specialInstructions: '' };
+    }
   });
 
   const [activeOrders, setActiveOrders] = useState<Order[]>([]);
@@ -71,33 +115,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
-
-  // Initialize session token & load persisted cart
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      try {
-        let token = localStorage.getItem('vv_session_token');
-        if (!token) {
-          token = `sess_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-          localStorage.setItem('vv_session_token', token);
-        }
-        setSessionToken(token);
-
-        const savedCart = localStorage.getItem('vv_cart');
-        if (savedCart) {
-          setCart(JSON.parse(savedCart));
-        }
-
-        const savedCustomer = localStorage.getItem('vv_customer');
-        if (savedCustomer) {
-          setCustomerDetails(JSON.parse(savedCustomer));
-        }
-      } catch {
-        // LocalStorage unavailable in SSR or private mode fallback
-      }
-    }, 0);
-    return () => clearTimeout(timer);
-  }, []);
 
   // Save cart changes to localStorage
   useEffect(() => {
@@ -137,8 +154,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const data = await res.json();
       if (data.orders) {
         const orders: Order[] = data.orders;
-        const active = orders.filter((o) => !['COMPLETED', 'CANCELLED'].includes(o.status));
-        const previous = orders.filter((o) => ['COMPLETED', 'CANCELLED'].includes(o.status));
+        const active = orders.filter(
+          (o) => !['COMPLETED', 'CANCELLED'].includes(o.status) && !o.billGenerated && o.sessionStatus !== 'BILL_GENERATED'
+        );
+        const previous = orders.filter(
+          (o) => ['COMPLETED', 'CANCELLED'].includes(o.status) || o.billGenerated || o.sessionStatus === 'BILL_GENERATED'
+        );
         setActiveOrders(active);
         setPreviousOrders(previous);
       }
@@ -151,7 +172,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchOrders();
-    }, 0);
+    }, 100);
     const interval = setInterval(fetchOrders, 4000);
     return () => {
       clearTimeout(timer);
@@ -306,6 +327,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Order created successfully!
+      if (data.order?.sessionToken && data.order.sessionToken !== sessionToken) {
+        setSessionToken(data.order.sessionToken);
+        try {
+          localStorage.setItem('vv_session_token', data.order.sessionToken);
+        } catch {
+          // ignore
+        }
+      }
+
       clearCart();
       setIsCheckoutOpen(false);
       setIsCartOpen(false);
@@ -325,6 +355,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   return (
     <CartContext.Provider
       value={{
+        isHydrated,
         cart,
         table,
         sessionToken,

@@ -1,22 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchFromBackend } from '@/lib/backend-api';
+import { CafeStore } from '@/lib/cafe-store';
 
 export async function GET(
   _request: NextRequest,
   context: { params: Promise<{ orderId: string }> }
 ) {
   const { orderId } = await context.params;
+
+  // 1. Try FastAPI backend
   try {
-    const res = await fetchFromBackend(`/api/v1/billing/${orderId}`);
-    if (!res.ok) {
-      return NextResponse.json({ error: 'Bill not found for order' }, { status: 404 });
+    const backendRes = await fetchFromBackend(`/api/v1/billing/${orderId}`);
+    if (backendRes.ok) {
+      const bill = await backendRes.json();
+      return NextResponse.json({ bill });
     }
-    const bill = await res.json();
-    return NextResponse.json({ bill });
-  } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Backend unreachable' },
-      { status: 503 }
-    );
+  } catch {
+    // Proceed to local CafeStore
   }
+
+  const bill = CafeStore.generateBill(orderId);
+
+  if (!bill) {
+    return NextResponse.json({ error: 'Bill not found for order' }, { status: 404 });
+  }
+
+  return NextResponse.json({ bill });
 }
+

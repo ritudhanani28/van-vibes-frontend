@@ -187,11 +187,18 @@ export const CafeStore = {
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   },
 
-  getOrdersBySession(tableId: string, sessionToken: string): Order[] {
+  getOrdersBySession(tableId: string, sessionToken?: string): Order[] {
     const table = this.getTable(tableId);
     if (!table) return [];
+    if (sessionToken) {
+      return store.orders
+        .filter((o) => o.tableId === table.id && o.sessionToken === sessionToken)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
+    const newest = store.orders.find((o) => o.tableId === table.id);
+    if (!newest) return [];
     return store.orders
-      .filter((o) => o.tableId === table.id && (!sessionToken || o.sessionToken === sessionToken))
+      .filter((o) => o.tableId === table.id && o.sessionToken === newest.sessionToken)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   },
 
@@ -267,12 +274,35 @@ export const CafeStore = {
     const tax = 0;
     const total = subtotal;
 
+    // Rule: Check if current session/order is billed.
+    // If billed, do NOT append. Create and use a NEW dining session context!
+    let sessionToken = data.sessionToken;
+    let isBilledSession = false;
+
+    if (sessionToken) {
+      const isTokenBilled = store.orders.some(
+        (o) => o.tableId === table.id && o.sessionToken === sessionToken && (o.billGenerated || o.sessionStatus === 'BILL_GENERATED' || o.sessionStatus === 'CLOSED')
+      );
+      if (isTokenBilled) {
+        isBilledSession = true;
+      }
+    } else {
+      const latestOrder = store.orders.find((o) => o.tableId === table.id);
+      if (latestOrder && (latestOrder.billGenerated || latestOrder.sessionStatus === 'BILL_GENERATED')) {
+        isBilledSession = true;
+      }
+    }
+
+    if (isBilledSession || !sessionToken) {
+      sessionToken = `sess_${table.id}_${Date.now()}`;
+    }
+
     const newOrder: Order = {
       id: `VV-${store.orderCounter++}`,
       cafeId: CAFE_INFO.id,
       tableId: table.id,
       tableNumber: table.tableNumber,
-      sessionToken: data.sessionToken || `sess_${table.id}_${Date.now()}`,
+      sessionToken,
       customerName: data.customerName.trim(),
       customerMobile: cleanMobile,
       specialInstructions: data.specialInstructions?.trim() || undefined,
@@ -282,6 +312,8 @@ export const CafeStore = {
       total,
       status: 'ORDER_PLACED',
       paymentStatus: 'PENDING',
+      sessionStatus: 'OPEN',
+      billGenerated: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -328,38 +360,98 @@ export const CafeStore = {
     return { success: true, order };
   },
 
-  generateBill(orderId: string): BillData | null {
+  settlePayment(orderId: string, _paymentMethod: string = 'CASH'): { success: boolean; order?: Order; error?: string } {
+    void _paymentMethod;
+    const order = this.getOrderById(orderId);
+    if (!order) return { success: false, error: 'Order not found' };
+
+    const targetSessionToken = order.sessionToken;
+    const sessionOrders = store.orders.filter(
+      (o) => o.tableId === order.tableId && (o.sessionToken === targetSessionToken || o.id === order.id)
+    );
+
+    for (const o of sessionOrders) {
+      o.paymentStatus = 'PAID';
+      o.sessionStatus = 'CLOSED';
+      o.updatedAt = new Date().toISOString();
+    }
+
+    // Table is set to AVAILABLE only if no other active unbilled session is on the table
+    const otherActiveSession = store.orders.some(
+      (o) => o.tableId === order.tableId && !o.billGenerated && o.sessionStatus === 'OPEN'
+    );
+    const table = this.getTable(order.tableId);
+    if (table && !otherActiveSession) {
+      table.status = 'AVAILABLE';
+    }
+
+    return { success: true, order };
+  },
+
+  generateBill(orderId: string, discountPercentage: number = 0): BillData | null {
     const order = this.getOrderById(orderId);
     if (!order) return null;
 
-    const cgst = Math.round((order.tax / 2) * 100) / 100;
-    const sgst = Math.round((order.tax / 2) * 100) / 100;
+    // Permanently close current order group for that dining session
+    const targetSessionToken = order.sessionToken;
+    const sessionOrders = store.orders.filter(
+      (o) => o.tableId === order.tableId && (o.sessionToken === targetSessionToken || o.id === order.id)
+    );
+
+    const discountPct = Math.max(0, Math.min(100, discountPercentage));
+    const subtotal = sessionOrders.reduce((sum, o) => sum + o.subtotal, 0);
+    const tax = Math.round(subtotal * CAFE_INFO.taxRate * 100) / 100;
+    const cgst = Math.round((tax / 2) * 100) / 100;
+    const sgst = Math.round((tax / 2) * 100) / 100;
+    const discountAmount = Math.round(subtotal * (discountPct / 100) * 100) / 100;
+    const total = Math.round(Math.max(0, subtotal + tax - discountAmount) * 100) / 100;
+
+    for (const o of sessionOrders) {
+      o.billGenerated = true;
+      o.sessionStatus = 'BILL_GENERATED';
+      o.discountPercentage = discountPct;
+      o.discountAmount = discountAmount;
+      o.updatedAt = new Date().toISOString();
+    }
+
+    // Bill generation permanently frees the physical table immediately!
+    const table = this.getTable(order.tableId);
+    if (table) {
+      table.status = 'AVAILABLE';
+    }
 
     return {
       billNumber: `BILL-${order.id.replace('VV-', '')}-${new Date(order.createdAt).getFullYear()}`,
       orderId: order.id,
+      diningSessionId: order.diningSessionId || targetSessionToken,
+      sessionStatus: 'BILL_GENERATED',
+      tableStatus: 'AVAILABLE',
       cafe: CAFE_INFO,
       tableNumber: order.tableNumber,
       customerName: order.customerName,
       customerMobile: order.customerMobile,
       specialInstructions: order.specialInstructions,
-      items: order.items.map((i) => ({
-        name: i.name,
-        quantity: i.quantity,
-        unitPrice: i.price,
-        totalPrice: i.price * i.quantity,
-        notes: [
-          i.selectedOptions ? Object.values(i.selectedOptions).join(', ') : '',
-          i.selectedAddOns ? i.selectedAddOns.join(', ') : '',
-        ]
-          .filter(Boolean)
-          .join(' | '),
-      })),
-      subtotal: order.subtotal,
+      items: sessionOrders.flatMap((so) =>
+        so.items.map((i) => ({
+          name: i.name,
+          quantity: i.quantity,
+          unitPrice: i.price,
+          totalPrice: i.price * i.quantity,
+          notes: [
+            i.selectedOptions ? Object.values(i.selectedOptions).join(', ') : '',
+            i.selectedAddOns ? i.selectedAddOns.join(', ') : '',
+          ]
+            .filter(Boolean)
+            .join(' | '),
+        }))
+      ),
+      subtotal,
       cgst,
       sgst,
-      taxAmount: order.tax,
-      total: order.total,
+      taxAmount: tax,
+      discountPercentage: discountPct,
+      discountAmount,
+      total,
       paymentStatus: order.paymentStatus,
       createdAt: order.createdAt,
     };

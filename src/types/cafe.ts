@@ -103,9 +103,13 @@ export interface Order {
   items: CartItem[];
   subtotal: number;
   tax: number; // 5% GST
+  discountPercentage?: number;
+  discountAmount?: number;
   total: number;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
+  sessionStatus?: SessionStatus;
+  billGenerated?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -124,7 +128,12 @@ export interface CafeDetails {
 
 export interface BillData {
   billNumber: string;
-  orderId: string;
+  orderId?: string;
+  diningSessionId?: string;
+  orderIds?: string[];
+  billType?: string;
+  sessionStatus?: SessionStatus;
+  tableStatus?: TableStatus;
   cafe: CafeDetails;
   tableNumber: number;
   customerName: string;
@@ -141,7 +150,10 @@ export interface BillData {
   cgst: number;
   sgst: number;
   taxAmount: number;
+  discountPercentage?: number;
+  discountAmount?: number;
   total: number;
   paymentStatus: PaymentStatus;
   createdAt: string;
 }
+

@@ -6,7 +6,7 @@ import { ShoppingBag, Clock, Search } from 'lucide-react';
 import Link from 'next/link';
 
 export function CafeHeader() {
-  const { table, itemCount, total, setIsCartOpen, activeOrders, setIsOrdersOpen, setIsSearchOpen } = useCart();
+  const { isHydrated, table, itemCount, total, setIsCartOpen, activeOrders, setIsOrdersOpen, setIsSearchOpen } = useCart();
 
   return (
     <header className="sticky top-0 z-40 bg-brand-green text-brand-beige border-b border-brand-green-light shadow-md">
@@ -34,7 +34,7 @@ export function CafeHeader() {
         {/* Table Badge & Action Pills */}
         <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           {/* Active Table Pill */}
-          {table ? (
+          {isHydrated && table ? (
             <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-brand-green-light border border-brand-gold/40 text-brand-beige text-xs sm:text-sm font-semibold shadow-inner shrink-0">
               <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span>Table </span>
@@ -47,7 +47,7 @@ export function CafeHeader() {
           )}
 
           {/* Active Orders Tracker Pill */}
-          {activeOrders.length > 0 && (
+          {isHydrated && activeOrders.length > 0 && (
             <button
               onClick={() => setIsOrdersOpen(true)}
               className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-brand-gold/20 text-brand-gold hover:bg-brand-gold/30 border border-brand-gold/40 text-xs sm:text-sm font-medium transition-all shrink-0 min-h-[36px]"

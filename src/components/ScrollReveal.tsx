@@ -2,6 +2,22 @@
 
 import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
+function subscribeReducedMotion(callback: () => void) {
+  if (typeof window === 'undefined') return () => {};
+  const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+  mediaQuery.addEventListener('change', callback);
+  return () => mediaQuery.removeEventListener('change', callback);
+}
+
+function getReducedMotionSnapshot() {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function getReducedMotionServerSnapshot() {
+  return false;
+}
+
 interface ScrollRevealProps extends React.HTMLAttributes<HTMLElement> {
   children: React.ReactNode;
   className?: string;
@@ -25,7 +41,7 @@ export function ScrollReveal({
   delay = 0,
   staggerIndex = 0,
   staggerBaseDelay = 70,
-  threshold = 0.1,
+  threshold = 0.05,
   once = true,
   as: Component = 'div',
   style,
@@ -34,14 +50,9 @@ export function ScrollReveal({
   const ref = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const prefersReducedMotion = useSyncExternalStore(
-    (callback) => {
-      if (typeof window === 'undefined' || !window.matchMedia) return () => {};
-      const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-      mediaQuery.addEventListener('change', callback);
-      return () => mediaQuery.removeEventListener('change', callback);
-    },
-    () => (typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)').matches : false),
-    () => false
+    subscribeReducedMotion,
+    getReducedMotionSnapshot,
+    getReducedMotionServerSnapshot
   );
 
   useEffect(() => {
@@ -66,7 +77,7 @@ export function ScrollReveal({
       },
       {
         threshold,
-        rootMargin: '0px 0px -30px 0px',
+        rootMargin: '100px 0px 100px 0px',
       }
     );
 
@@ -96,17 +107,18 @@ export function ScrollReveal({
   };
 
   const totalDelay = Math.min(delay + staggerIndex * staggerBaseDelay, 400);
+  const activeVisible = prefersReducedMotion || isVisible;
 
   const transitionStyle: React.CSSProperties = prefersReducedMotion
     ? {}
     : {
-        opacity: isVisible ? 1 : 0,
-        transform: isVisible ? 'translate3d(0, 0, 0)' : getInitialTransform(),
+        opacity: activeVisible ? 1 : 0,
+        transform: activeVisible ? 'translate3d(0, 0, 0)' : getInitialTransform(),
         transitionProperty: 'opacity, transform',
         transitionDuration: `${duration}ms`,
         transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
         transitionDelay: `${totalDelay}ms`,
-        willChange: isVisible ? 'auto' : 'opacity, transform',
+        willChange: activeVisible ? 'auto' : 'opacity, transform',
         ...style,
       };
 

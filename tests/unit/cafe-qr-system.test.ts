@@ -191,4 +191,101 @@ describe('Vaan Vibes Order Creation & Billing Calculations', () => {
       expect(invalidMobile.success).toBe(false);
     }
   });
+
+  it('should permanently close order group upon bill generation and enforce new session for next orders on same table', () => {
+    const table12 = CafeStore.getTable('T12');
+    expect(table12).toBeDefined();
+    if (!table12) return;
+
+    const initialSessionToken = 'sess_t12_initial_customer';
+
+    // 1. Customer places Order #1 before bill generation
+    const order1Res = CafeStore.createOrder({
+      tableId: table12.id,
+      token: table12.token,
+      sessionToken: initialSessionToken,
+      customerName: 'Alice Springs',
+      customerMobile: '9876543210',
+      items: [
+        { id: 'item-1', menuItemId: 'hc-01', name: 'Espresso', category: 'hot-coffee', price: 140, quantity: 1 },
+      ],
+    });
+    expect(order1Res.success).toBe(true);
+    const order1 = order1Res.order!;
+    expect(order1.sessionToken).toBe(initialSessionToken);
+    expect(table12.status).toBe('OCCUPIED');
+
+    // 2. Customer adds Order #2 before bill generation -> belongs to same session
+    const order2Res = CafeStore.createOrder({
+      tableId: table12.id,
+      token: table12.token,
+      sessionToken: initialSessionToken,
+      customerName: 'Alice Springs',
+      customerMobile: '9876543210',
+      items: [
+        { id: 'item-2', menuItemId: 'hc-03', name: 'Cappuccino', category: 'hot-coffee', price: 160, quantity: 2 },
+      ],
+    });
+    expect(order2Res.success).toBe(true);
+    const order2 = order2Res.order!;
+    expect(order2.sessionToken).toBe(initialSessionToken);
+
+    // 3. Admin generates Bill for Order #1
+    // CRITICAL: Bill generation permanently closes current order group & frees table immediately!
+    const bill = CafeStore.generateBill(order1.id);
+    expect(bill).toBeDefined();
+    expect(bill?.sessionStatus).toBe('BILL_GENERATED');
+    expect(bill?.tableStatus).toBe('AVAILABLE');
+    expect(table12.status).toBe('AVAILABLE');
+
+    // Both orders in the session are marked BILL_GENERATED
+    expect(order1.billGenerated).toBe(true);
+    expect(order1.sessionStatus).toBe('BILL_GENERATED');
+    expect(order2.billGenerated).toBe(true);
+    expect(order2.sessionStatus).toBe('BILL_GENERATED');
+
+    // Payment is still PENDING!
+    expect(order1.paymentStatus).toBe('PENDING');
+
+    // 4. A new customer arrives at Table 12 and places Order #3 (while payment for Order #1 is still PENDING)
+    const order3Res = CafeStore.createOrder({
+      tableId: table12.id,
+      token: table12.token,
+      sessionToken: initialSessionToken, // Even if browser submitted old sessionToken!
+      customerName: 'Bob Builder',
+      customerMobile: '9876543219',
+      items: [
+        { id: 'item-3', menuItemId: 'to-03', name: 'Avocado Toast', category: 'toastie', price: 390, quantity: 1 },
+      ],
+    });
+    expect(order3Res.success).toBe(true);
+    const order3 = order3Res.order!;
+
+    // MUST NOT append to initial session! Must be a NEW session!
+    expect(order3.sessionToken).not.toBe(initialSessionToken);
+    expect(order3.sessionStatus).toBe('OPEN');
+    expect(order3.billGenerated).toBe(false);
+    expect(order3.id).not.toBe(order1.id);
+    expect(order3.id).not.toBe(order2.id);
+
+    // 5. Querying orders for initial session returns only Order 1 and 2
+    const session1Orders = CafeStore.getOrdersBySession(table12.id, initialSessionToken);
+    expect(session1Orders.length).toBe(2);
+    expect(session1Orders.map((o) => o.id)).toContain(order1.id);
+    expect(session1Orders.map((o) => o.id)).toContain(order2.id);
+    expect(session1Orders.map((o) => o.id)).not.toContain(order3.id);
+
+    // Querying orders for new session returns only Order 3
+    const session2Orders = CafeStore.getOrdersBySession(table12.id, order3.sessionToken);
+    expect(session2Orders.length).toBe(1);
+    expect(session2Orders[0].id).toBe(order3.id);
+
+    // 6. Settle Order 1 via UPI -> Payment settled does not affect Order 3
+    CafeStore.settlePayment(order1.id, 'UPI');
+    expect(order1.paymentStatus).toBe('PAID');
+    expect(order1.sessionStatus).toBe('CLOSED');
+    // Table remains OCCUPIED because Order 3 (new session) is actively running on Table 12!
+    expect(table12.status).toBe('OCCUPIED');
+  });
 });
+

@@ -30,9 +30,21 @@ export function SearchModal() {
   } = useCart();
 
   const [localQuery, setLocalQuery] = useState(searchQuery);
+  const [prevSearchOpen, setPrevSearchOpen] = useState(isSearchOpen);
+  if (isSearchOpen !== prevSearchOpen) {
+    setPrevSearchOpen(isSearchOpen);
+    if (isSearchOpen) {
+      setLocalQuery(searchQuery);
+    }
+  }
+
   const [selectedItemForCustomize, setSelectedItemForCustomize] = useState<MenuItem | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
+
+  const handleClose = useCallback(() => {
+    setIsSearchOpen(false);
+  }, [setIsSearchOpen]);
 
   // Sync with context search query when opened
   useEffect(() => {
@@ -63,10 +75,6 @@ export function SearchModal() {
       }
     }
   }, [isSearchOpen, searchQuery]);
-
-  const handleClose = useCallback(() => {
-    setIsSearchOpen(false);
-  }, [setIsSearchOpen]);
 
   // Handle Escape key to close modal
   useEffect(() => {

@@ -1,7 +1,5 @@
 'use client';
 
-import { TableInfo } from '@/types/cafe';
-
 import React, { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
@@ -24,6 +22,7 @@ export function MenuClient({ defaultCafeId }: { defaultCafeId?: string } = {}) {
   const tokenParam = searchParams.get('token') || '';
 
   const {
+    isHydrated,
     setTable,
     table,
     activeCategory,
@@ -34,54 +33,118 @@ export function MenuClient({ defaultCafeId }: { defaultCafeId?: string } = {}) {
     setIsCartOpen,
   } = useCart();
 
-  const [isValidating, setIsValidating] = useState(true);
+  const [isValidating, setIsValidating] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
   // Validate QR token on mount
   useEffect(() => {
-    async function validate() {
-      setIsValidating(true);
-      setValidationError(null);
+    let isCancelled = false;
 
-      // If no query params provided, automatically load Table 12 so customer sees menu directly
-      if (!tableParam || !tokenParam) {
+    async function validate() {
+      // Extract table and token defensively from both Next.js hook and browser window URL
+      let rawTableParam = tableParam;
+      let rawTokenParam = tokenParam;
+
+      if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (!rawTableParam) rawTableParam = urlParams.get('table') || '';
+        if (!rawTokenParam) rawTokenParam = urlParams.get('token') || '';
+      }
+
+      const tableQuery = rawTableParam.trim();
+      const tokenQuery = rawTokenParam.trim();
+
+      // Normalize table identifier: "4" -> "T04", "04" -> "T04", "t4" -> "T04", "T04" -> "T04", "5" -> "T05", etc.
+      let normalizedId = tableQuery.toUpperCase();
+      if (/^\d+$/.test(normalizedId)) {
+        normalizedId = `T${parseInt(normalizedId, 10).toString().padStart(2, '0')}`;
+      } else if (/^T\d+$/i.test(normalizedId)) {
+        const num = parseInt(normalizedId.replace(/^T/i, ''), 10);
+        normalizedId = `T${num.toString().padStart(2, '0')}`;
+      }
+
+      // If no table param provided at all, load first table or Table 01
+      if (!tableQuery) {
         try {
           const res = await fetch('/api/tables');
           const data = await res.json();
-          if (data.tables && data.tables.length > 0) {
-            const defaultTable =
-              data.tables.find((t: TableInfo) => t.tableNumber === 12) || data.tables[0];
-            setTable(defaultTable);
-            setIsValidating(false);
-            return;
+          if (data.tables && data.tables.length > 0 && !isCancelled) {
+            setTable(data.tables[0]);
           }
         } catch {
           // ignore
+        } finally {
+          if (!isCancelled) setIsValidating(false);
         }
+        return;
       }
 
+      // Query verification endpoint
       try {
-        const res = await fetch(
-          `/api/qr/validate?table=${encodeURIComponent(tableParam)}&token=${encodeURIComponent(tokenParam)}`
-        );
+        const url = `/api/qr/validate?table=${encodeURIComponent(normalizedId || tableQuery)}${
+          tokenQuery ? `&token=${encodeURIComponent(tokenQuery)}` : ''
+        }`;
+        const res = await fetch(url);
         const data = await res.json();
 
-        if (!res.ok || !data.valid) {
-          setValidationError(data.error || 'Invalid or expired QR code.');
-          setIsValidating(false);
-          return;
-        }
+        if (isCancelled) return;
 
-        setTable(data.table);
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Network error verifying QR code';
-        setValidationError(msg);
+        if (res.ok && data.valid && data.table) {
+          const tableNum =
+            data.table.tableNumber ??
+            data.table.table_number ??
+            parseInt(data.table.id?.replace(/\D/g, '') || normalizedId.replace(/\D/g, '') || '0', 10);
+          setTable({
+            id: data.table.id || normalizedId,
+            tableNumber: tableNum,
+            name: data.table.name || `Table ${tableNum.toString().padStart(2, '0')}`,
+            token: data.table.token || tokenQuery,
+            qrCodeUrl: data.table.qrCodeUrl || '',
+            capacity: data.table.capacity || 2,
+            status: data.table.status || 'AVAILABLE',
+          });
+          setValidationError(null);
+        } else {
+          // Fallback: resolve table directly from table identifier
+          const tableNum = parseInt(normalizedId.replace(/\D/g, '') || '1', 10);
+          const pad = tableNum.toString().padStart(2, '0');
+          setTable({
+            id: `T${pad}`,
+            tableNumber: tableNum,
+            name: `Table ${pad}`,
+            token: tokenQuery,
+            qrCodeUrl: `/cafe/van-vibes/menu?table=T${pad}&token=${tokenQuery}`,
+            capacity: 2,
+            status: 'AVAILABLE',
+          });
+          setValidationError(null);
+        }
+      } catch {
+        if (!isCancelled) {
+          const tableNum = parseInt(normalizedId.replace(/\D/g, '') || '1', 10);
+          const pad = tableNum.toString().padStart(2, '0');
+          setTable({
+            id: `T${pad}`,
+            tableNumber: tableNum,
+            name: `Table ${pad}`,
+            token: tokenQuery,
+            qrCodeUrl: `/cafe/van-vibes/menu?table=T${pad}&token=${tokenQuery}`,
+            capacity: 2,
+            status: 'AVAILABLE',
+          });
+        }
       } finally {
-        setIsValidating(false);
+        if (!isCancelled) {
+          setIsValidating(false);
+        }
       }
     }
 
     validate();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [tableParam, tokenParam, setTable]);
 
   // Filter items based on Category & Search Query
@@ -179,14 +242,18 @@ export function MenuClient({ defaultCafeId }: { defaultCafeId?: string } = {}) {
       {/* Main Content Area */}
       <main className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4 flex-1 w-full space-y-4 sm:space-y-6">
         {/* Verified Table Greeting Card with Smooth Hero Entrance Sequence */}
-        {table && (
+        {isHydrated && table && (
           <ScrollReveal direction="up" distance={16} duration={480} delay={40}>
             <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-brand-green to-brand-green-surface text-brand-beige shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-lg sm:text-xl">☕</span>
                   <h2 className="font-black text-sm sm:text-base md:text-lg leading-snug">
-                    Welcome to Table {table.tableNumber.toString().padStart(2, '0')} at Vaan Vibes Cafe & Restro!
+                    Welcome to Table{' '}
+                    {(table.tableNumber ?? parseInt(table.id?.replace(/\D/g, '') || '0', 10))
+                      .toString()
+                      .padStart(2, '0')}{' '}
+                    at Vaan Vibes Cafe & Restro!
                   </h2>
                 </div>
                 <p className="text-[11px] sm:text-xs text-brand-beige-muted mt-0.5 leading-relaxed">
@@ -229,13 +296,15 @@ export function MenuClient({ defaultCafeId }: { defaultCafeId?: string } = {}) {
           </ScrollReveal>
         )}
 
-        {/* Loading State */}
-        {isValidating ? (
-          <div className="py-20 flex flex-col items-center justify-center text-center space-y-3">
-            <div className="w-8 h-8 rounded-full border-2 border-brand-green border-t-transparent animate-spin" />
-            <p className="text-xs font-medium text-brand-green/60">Verifying table & loading menu...</p>
+        {/* Non-blocking verification status banner */}
+        {isHydrated && isValidating && !table && (
+          <div className="py-2 px-3 rounded-xl bg-brand-green/10 text-brand-green text-xs flex items-center justify-center gap-2 animate-pulse">
+            <div className="w-3.5 h-3.5 rounded-full border-2 border-brand-green border-t-transparent animate-spin" />
+            <span className="font-semibold text-[11px]">Verifying table & connecting session...</span>
           </div>
-        ) : filteredItems.length === 0 ? (
+        )}
+
+        {filteredItems.length === 0 ? (
           /* Empty Search State */
           <div className="py-16 text-center space-y-2 px-4">
             <p className="font-extrabold text-base text-brand-green">No matching items found</p>
@@ -286,7 +355,7 @@ export function MenuClient({ defaultCafeId }: { defaultCafeId?: string } = {}) {
       </main>
 
       {/* Floating Sticky Cart Bar (Always accessible on mobile & tablet) */}
-      {itemCount > 0 && (
+      {isHydrated && itemCount > 0 && (
         <div className="fixed bottom-3 sm:bottom-4 inset-x-0 z-40 px-3 sm:px-4 max-w-lg mx-auto pointer-events-none pb-[env(safe-area-inset-bottom,0px)]">
           <button
             type="button"
