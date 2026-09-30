@@ -13,8 +13,6 @@ export function OrderConfirmationModal() {
     isCheckoutOpen,
     setIsCheckoutOpen,
     setIsCartOpen,
-    subtotal,
-    tax,
     total,
     placeOrder,
     isPlacingOrder,
@@ -35,7 +33,7 @@ export function OrderConfirmationModal() {
 
     const cleanMobile = customerDetails.mobile.replace(/\D/g, '');
     if (cleanMobile.length !== 10) {
-      setFormError('Please enter a valid 10-digit Indian mobile number.');
+      setFormError('Please enter a valid 10-digit WhatsApp number.');
       return;
     }
 
@@ -73,7 +71,7 @@ export function OrderConfirmationModal() {
                 {step === 'details' ? 'Customer Details' : 'Confirm Your Order'}
               </h3>
               <p className="text-[11px] sm:text-xs text-brand-beige-muted">
-                {table ? `Table ${table.tableNumber.toString().padStart(2, '0')}` : 'Dine-In Order'} • Vaan Vibes Cafe & Restro
+                {table ? `Table ${table.tableNumber}` : 'Dine-In Order'} • Vaan Vibes Cafe & Restro
               </p>
             </div>
           </div>
@@ -133,7 +131,7 @@ export function OrderConfirmationModal() {
                     Table Location
                   </span>
                   <p className="font-extrabold text-xs sm:text-sm text-brand-green">
-                    {table ? `Table ${table.tableNumber.toString().padStart(2, '0')} (${table.name})` : 'Dine-In Area'}
+                    {table ? `Table ${table.tableNumber}` : 'Dine-In Area'}
                   </p>
                 </div>
                 <div className="flex items-center gap-1 text-emerald-700 font-bold text-xs bg-white/80 px-2.5 py-1 rounded-full border border-emerald-200 shrink-0">
@@ -160,11 +158,11 @@ export function OrderConfirmationModal() {
                 />
               </div>
 
-              {/* Mobile Number */}
+              {/* WhatsApp Number */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-brand-green flex items-center gap-1.5">
                   <Phone className="w-3.5 h-3.5 text-brand-green/70 shrink-0" />
-                  <span>Mobile Number (for live order status)</span>
+                  <span>WhatsApp Number (for digital bill)</span>
                   <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -186,7 +184,7 @@ export function OrderConfirmationModal() {
                   />
                 </div>
                 <p className="text-[10px] sm:text-[11px] text-brand-green/50">
-                  Required to send order updates & digital invoice receipt.
+                  Required to send your digital bill receipt on WhatsApp.
                 </p>
               </div>
 
@@ -227,7 +225,7 @@ export function OrderConfirmationModal() {
                 <div className="flex justify-between">
                   <span className="text-brand-green/60">Table:</span>
                   <span className="font-bold text-brand-green">
-                    {table ? `Table ${table.tableNumber.toString().padStart(2, '0')}` : 'General Table'}
+                    {table ? `Table ${table.tableNumber}` : 'General Table'}
                   </span>
                 </div>
                 {customerDetails.specialInstructions && (
@@ -272,25 +270,19 @@ export function OrderConfirmationModal() {
                           </div>
                         )}
                       </div>
-                      <span className="font-mono font-bold text-brand-green shrink-0">
-                        ₹{(item.price * item.quantity).toFixed(0)}
-                      </span>
+                      <div className="flex flex-col items-end shrink-0">
+                        <span className="font-mono font-bold text-brand-green">
+                          ₹{(item.price * item.quantity).toFixed(0)}
+                        </span>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* Financial Totals */}
-              <div className="p-3 sm:p-3.5 rounded-xl bg-white border border-brand-beige-dark space-y-1.5 text-xs">
-                <div className="flex justify-between text-brand-green/70">
-                  <span>Subtotal</span>
-                  <span className="font-mono">₹{subtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-brand-green/70">
-                  <span>GST (5%)</span>
-                  <span className="font-mono">₹{tax.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between font-extrabold text-sm text-brand-green pt-1.5 border-t border-brand-beige-dark">
+              <div className="p-3 sm:p-3.5 rounded-xl bg-white border border-brand-beige-dark text-xs">
+                <div className="flex justify-between font-extrabold text-sm text-brand-green">
                   <span>Grand Total</span>
                   <span className="font-mono text-base">₹{total.toFixed(2)}</span>
                 </div>

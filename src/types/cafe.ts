@@ -1,15 +1,27 @@
 export type OrderStatus =
-  | 'ORDER_PLACED'
+  | 'PLACED'
   | 'ACCEPTED'
-  | 'PREPARING'
-  | 'READY'
   | 'SERVED'
   | 'COMPLETED'
-  | 'CANCELLED';
+  | 'CANCELLED'
+  | 'ORDER_PLACED'
+  | 'PREPARING'
+  | 'READY';
 
 export type PaymentStatus = 'PENDING' | 'PAID' | 'REFUNDED';
 
 export type TableStatus = 'AVAILABLE' | 'OCCUPIED' | 'RESERVED';
+
+export type SessionStatus = 'OPEN' | 'BILL_GENERATED' | 'CLOSED';
+
+export interface DiningSession {
+  id: string; // e.g. 'DS-1001'
+  tableId: string;
+  tableNumber: number;
+  status: SessionStatus;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface TableInfo {
   id: string; // e.g., 'T01'
@@ -19,6 +31,7 @@ export interface TableInfo {
   qrCodeUrl: string; // Full URL or relative path to scan
   capacity: number;
   status: TableStatus;
+  activeSession?: DiningSession;
 }
 
 export interface MenuItemOption {
@@ -45,6 +58,7 @@ export interface MenuItem {
   addOns?: MenuItemAddOn[];
   image?: string;
   popular?: boolean;
+  isAvailable?: boolean;
 }
 
 export interface MenuCategory {
@@ -61,6 +75,8 @@ export interface CartItem {
   name: string;
   category: string;
   price: number;
+  unitPrice?: number;
+  itemTotal?: number;
   quantity: number;
   selectedOptions?: { [key: string]: string };
   selectedAddOns?: string[];
@@ -78,6 +94,7 @@ export interface Order {
   cafeId: string;
   tableId: string;
   tableNumber: number;
+  diningSessionId?: string;
   sessionToken: string;
   customerName: string;
   customerMobile: string;

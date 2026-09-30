@@ -6,20 +6,21 @@ import { Order, OrderStatus } from '@/types/cafe';
 import { X, CheckCircle2, Clock, ChefHat, Sparkles, Utensils, PlusCircle, XCircle } from 'lucide-react';
 
 const STATUS_STEPS: { status: OrderStatus; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { status: 'ORDER_PLACED', label: 'Order Placed', icon: Clock },
+  { status: 'PLACED', label: 'Order Placed', icon: Clock },
   { status: 'ACCEPTED', label: 'Order Accepted', icon: ChefHat },
   { status: 'COMPLETED', label: 'Completed', icon: Sparkles },
 ];
 
 function getStatusStepIndex(status: OrderStatus): number {
   switch (status) {
+    case 'PLACED':
     case 'ORDER_PLACED':
       return 0;
     case 'ACCEPTED':
     case 'PREPARING':
+    case 'SERVED':
     case 'READY':
       return 1;
-    case 'SERVED':
     case 'COMPLETED':
       return 2;
     default:
@@ -70,7 +71,7 @@ export function OrderTrackingModal() {
               <div>
                 <h3 className="font-extrabold text-base sm:text-lg text-brand-beige">Order Status & History</h3>
                 <p className="text-[11px] sm:text-xs text-brand-beige-muted">
-                  {table ? `Table ${table.tableNumber.toString().padStart(2, '0')}` : 'Dining Orders'} • Vaan Vibes Cafe & Restro
+                  {table ? `Table ${table.tableNumber}` : 'Dining Orders'} • Vaan Vibes Cafe & Restro
                 </p>
               </div>
             </div>
@@ -193,7 +194,7 @@ function OrderCard({
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-extrabold text-sm sm:text-base text-brand-green">{order.id}</span>
             <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-brand-beige text-brand-green border border-brand-beige-dark whitespace-nowrap">
-              Table {order.tableNumber.toString().padStart(2, '0')}
+              Table {order.tableNumber}
             </span>
           </div>
           <p className="text-[10px] sm:text-[11px] text-brand-green/60 mt-0.5">
@@ -202,7 +203,7 @@ function OrderCard({
         </div>
 
         {/* Cancel Button: ONLY visible and active when order is ORDER_PLACED (till accepted). Removed once accepted. */}
-        {order.status === 'ORDER_PLACED' && (
+        {(order.status === 'PLACED' || order.status === 'ORDER_PLACED') && (
           <div className="shrink-0">
             {!showConfirm ? (
               <button
@@ -251,18 +252,18 @@ function OrderCard({
             <span className="text-brand-green/70">Current Status:</span>
             <span
               className={`px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-black tracking-wide uppercase border shadow-2xs ${
-                order.status === 'COMPLETED' || order.status === 'SERVED'
+                order.status === 'COMPLETED'
                   ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                  : order.status === 'ACCEPTED' || order.status === 'PREPARING' || order.status === 'READY'
+                  : order.status === 'ACCEPTED' || order.status === 'PREPARING' || order.status === 'SERVED' || order.status === 'READY'
                   ? 'bg-blue-50 text-blue-800 border-blue-300'
                   : 'bg-amber-50 text-amber-900 border-amber-300'
               }`}
             >
-              {order.status === 'ORDER_PLACED'
+              {order.status === 'PLACED' || order.status === 'ORDER_PLACED'
                 ? 'Order Placed'
-                : order.status === 'ACCEPTED' || order.status === 'PREPARING' || order.status === 'READY'
+                : order.status === 'ACCEPTED' || order.status === 'PREPARING' || order.status === 'SERVED' || order.status === 'READY'
                 ? 'Order Accepted'
-                : order.status === 'COMPLETED' || order.status === 'SERVED'
+                : order.status === 'COMPLETED'
                 ? 'Completed'
                 : order.status.replace('_', ' ')}
             </span>
@@ -271,16 +272,21 @@ function OrderCard({
           {/* Stepper Flow: Labels ONLY ABOVE the Circles */}
           <div className="relative pt-1 pb-1">
             {/* Connecting Track Line behind circles */}
-            <div className="absolute bottom-[20px] sm:bottom-[24px] md:bottom-[28px] left-[16.67%] right-[16.67%] h-1 bg-brand-beige-dark/80 rounded-full z-0 -translate-y-1/2">
+            <div className="absolute bottom-[20px] sm:bottom-[24px] md:bottom-[28px] left-[16.66%] right-[16.66%] h-1 bg-brand-beige-dark/80 rounded-full z-0 -translate-y-1/2">
               <div
                 className="h-full bg-brand-green rounded-full transition-all duration-500 ease-out"
                 style={{
-                  width: currentStep === 0 ? '0%' : currentStep === 1 ? '50%' : '100%',
+                  width:
+                    currentStep === 0
+                      ? '0%'
+                      : currentStep === 1
+                      ? '50%'
+                      : '100%',
                 }}
               />
             </div>
 
-            {/* 3 Step Columns */}
+            {/* 3 Step Columns: PLACED -> ACCEPTED -> COMPLETED */}
             <div className="grid grid-cols-3 relative z-10">
               {STATUS_STEPS.map((step, idx) => {
                 const isPast = idx < currentStep;
@@ -355,7 +361,7 @@ function OrderCard({
                 )}
               </div>
               <span className="font-mono font-bold text-brand-green">
-                ₹{(item.price * item.quantity).toFixed(0)}
+                ₹{(item.itemTotal ?? (item.unitPrice ?? item.price ?? 0) * item.quantity).toFixed(0)}
               </span>
             </div>
           ))}

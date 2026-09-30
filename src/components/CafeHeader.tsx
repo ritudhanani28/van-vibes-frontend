@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useCart } from '@/context/CartContext';
-import { ShoppingBag, Clock, Sparkles, Search } from 'lucide-react';
+import { ShoppingBag, Clock, Search } from 'lucide-react';
 import Link from 'next/link';
 
 export function CafeHeader() {
@@ -37,9 +37,8 @@ export function CafeHeader() {
           {table ? (
             <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-brand-green-light border border-brand-gold/40 text-brand-beige text-xs sm:text-sm font-semibold shadow-inner shrink-0">
               <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="hidden xs:inline">Table </span>
-              <span className="xs:hidden">T-</span>
-              <span>{table.tableNumber.toString().padStart(2, '0')}</span>
+              <span>Table </span>
+              <span>{table.tableNumber}</span>
             </div>
           ) : (
             <div className="px-2 py-1 rounded bg-brand-green-surface text-brand-beige-muted text-[11px] sm:text-xs shrink-0">

@@ -10,7 +10,7 @@ export const CAFE_INFO: CafeDetails = {
   phone: '+91 98765 43210',
   gstin: '24AAAAA0000A1Z5',
   currency: '₹',
-  taxRate: 0.05, // 5% GST
+  taxRate: 0, // No GST
 };
 
 // Initial tables with pre-generated secure tokens
@@ -117,7 +117,6 @@ const INITIAL_ORDERS: Order[] = [
 
 // Persistent global store for dev and serverless runtime singleton
 declare global {
-  // eslint-disable-next-line no-var
   var __VAAN_VIBES_STORE__: {
     tables: TableInfo[];
     orders: Order[];
@@ -237,7 +236,8 @@ export const CafeStore = {
       }
 
       const qty = Math.max(1, Math.min(item.quantity || 1, 50));
-      let itemPrice = canonicalItem.price;
+      const basePrice = canonicalItem.price;
+      let itemPrice = basePrice;
 
       // Calculate add-on extras if selected
       if (item.selectedAddOns && item.selectedAddOns.length > 0 && canonicalItem.addOns) {
@@ -264,8 +264,8 @@ export const CafeStore = {
       });
     }
 
-    const tax = Math.round(subtotal * CAFE_INFO.taxRate * 100) / 100;
-    const total = Math.round((subtotal + tax) * 100) / 100;
+    const tax = 0;
+    const total = subtotal;
 
     const newOrder: Order = {
       id: `VV-${store.orderCounter++}`,

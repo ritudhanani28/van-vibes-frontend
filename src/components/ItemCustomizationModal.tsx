@@ -31,8 +31,10 @@ export function ItemCustomizationModal({ item, onClose }: Props) {
 
   if (!item) return null;
 
+  const basePrice = item.price;
+
   // Compute live price with add-ons
-  let calculatedPrice = item.price;
+  let calculatedPrice = basePrice;
   if (selectedAddOns.length > 0 && item.addOns) {
     for (const addOnName of selectedAddOns) {
       const match = item.addOns.find((a) => a.name === addOnName);
@@ -66,7 +68,7 @@ export function ItemCustomizationModal({ item, onClose }: Props) {
         {/* Modal Header */}
         <div className="px-4 sm:px-5 py-3 sm:py-4 bg-brand-beige border-b border-brand-beige-muted/60 flex items-center justify-between shrink-0">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="w-3 h-3 rounded-full border border-emerald-600 p-0.5 flex items-center justify-center shrink-0">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
               </span>
@@ -211,9 +213,11 @@ export function ItemCustomizationModal({ item, onClose }: Props) {
             className="w-full py-3 px-4 rounded-xl bg-brand-green hover:bg-brand-green-hover text-brand-beige font-bold text-sm flex items-center justify-between shadow-md active:scale-[0.99] transition-all min-h-[48px]"
           >
             <span>Add to Cart</span>
-            <span className="font-mono font-black text-brand-gold">
-              ₹{(calculatedPrice * quantity).toFixed(0)}
-            </span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-mono font-black text-brand-gold">
+                ₹{(calculatedPrice * quantity).toFixed(0)}
+              </span>
+            </div>
           </button>
         </div>
       </div>

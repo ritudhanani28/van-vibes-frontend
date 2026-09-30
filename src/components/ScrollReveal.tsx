@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
 interface ScrollRevealProps extends React.HTMLAttributes<HTMLElement> {
   children: React.ReactNode;
@@ -33,26 +33,19 @@ export function ScrollReveal({
 }: ScrollRevealProps) {
   const ref = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-
-  useEffect(() => {
-    // Check user preference for reduced motion
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setPrefersReducedMotion(mediaQuery.matches);
-
-    const handleMotionChange = (e: MediaQueryListEvent) => {
-      setPrefersReducedMotion(e.matches);
-    };
-
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener('change', handleMotionChange);
-      return () => mediaQuery.removeEventListener('change', handleMotionChange);
-    }
-  }, []);
+  const prefersReducedMotion = useSyncExternalStore(
+    (callback) => {
+      if (typeof window === 'undefined' || !window.matchMedia) return () => {};
+      const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+      mediaQuery.addEventListener('change', callback);
+      return () => mediaQuery.removeEventListener('change', callback);
+    },
+    () => (typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)').matches : false),
+    () => false
+  );
 
   useEffect(() => {
     if (prefersReducedMotion) {
-      setIsVisible(true);
       return;
     }
 

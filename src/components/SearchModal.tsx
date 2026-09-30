@@ -38,15 +38,15 @@ export function SearchModal() {
   useEffect(() => {
     if (isSearchOpen) {
       previousActiveElementRef.current = document.activeElement as HTMLElement;
-      setLocalQuery(searchQuery);
 
-      // Auto-focus input on opening
+      // Auto-focus input and sync query on opening
       const timer = setTimeout(() => {
+        setLocalQuery(searchQuery);
         if (inputRef.current) {
           inputRef.current.focus();
           inputRef.current.select();
         }
-      }, 50);
+      }, 0);
 
       // Lock body scroll on mobile
       const originalOverflow = document.body.style.overflow;
@@ -64,6 +64,10 @@ export function SearchModal() {
     }
   }, [isSearchOpen, searchQuery]);
 
+  const handleClose = useCallback(() => {
+    setIsSearchOpen(false);
+  }, [setIsSearchOpen]);
+
   // Handle Escape key to close modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -73,11 +77,7 @@ export function SearchModal() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isSearchOpen]);
-
-  const handleClose = useCallback(() => {
-    setIsSearchOpen(false);
-  }, [setIsSearchOpen]);
+  }, [isSearchOpen, handleClose]);
 
   const handleClear = useCallback(() => {
     setLocalQuery('');
@@ -336,7 +336,7 @@ export function SearchModal() {
                                 {item.description}
                               </p>
                             )}
-                            <div className="flex items-center gap-2 mt-1">
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
                               <span className="font-mono font-black text-xs sm:text-sm text-brand-green">
                                 ₹{item.price}/-
                               </span>
@@ -468,9 +468,11 @@ export function SearchModal() {
                           <p className="font-bold text-xs truncate group-hover:text-brand-beige">
                             {item.name}
                           </p>
-                          <p className="text-[10px] text-brand-green/60 group-hover:text-brand-beige/70 font-mono">
-                            ₹{item.price}/-
-                          </p>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <p className="text-[10px] text-brand-green/60 group-hover:text-brand-beige/70 font-mono">
+                              ₹{item.price}/-
+                            </p>
+                          </div>
                         </div>
                         <ArrowRight className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all shrink-0" />
                       </button>

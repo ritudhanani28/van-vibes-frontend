@@ -1,5 +1,7 @@
 'use client';
 
+import { TableInfo } from '@/types/cafe';
+
 import React, { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
@@ -12,10 +14,11 @@ import { OrderTrackingModal } from '@/components/OrderTrackingModal';
 import { SearchModal } from '@/components/SearchModal';
 import { ScrollReveal } from '@/components/ScrollReveal';
 import { MENU_ITEMS, MENU_CATEGORIES } from '@/data/vaan-vibes-menu';
-import { ShoppingBag, AlertTriangle, ArrowRight, ShieldCheck, Search } from 'lucide-react';
+import { AlertTriangle, ArrowRight, ShieldCheck, Search } from 'lucide-react';
 import Link from 'next/link';
 
-export function MenuClient({ defaultCafeId }: { defaultCafeId?: string }) {
+export function MenuClient({ defaultCafeId }: { defaultCafeId?: string } = {}) {
+  void defaultCafeId;
   const searchParams = useSearchParams();
   const tableParam = searchParams.get('table') || '';
   const tokenParam = searchParams.get('token') || '';
@@ -47,7 +50,7 @@ export function MenuClient({ defaultCafeId }: { defaultCafeId?: string }) {
           const data = await res.json();
           if (data.tables && data.tables.length > 0) {
             const defaultTable =
-              data.tables.find((t: any) => t.tableNumber === 12) || data.tables[0];
+              data.tables.find((t: TableInfo) => t.tableNumber === 12) || data.tables[0];
             setTable(defaultTable);
             setIsValidating(false);
             return;

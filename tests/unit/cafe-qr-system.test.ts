@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CafeStore, CAFE_INFO } from '@/lib/cafe-store';
+import { CafeStore } from '@/lib/cafe-store';
 import { MENU_CATEGORIES, MENU_ITEMS } from '@/data/vaan-vibes-menu';
 
 describe('Vaan Vibes QR Code & Table Security', () => {
@@ -137,10 +137,9 @@ describe('Vaan Vibes Order Creation & Billing Calculations', () => {
       const order = orderRes.order!;
       // Subtotal = 280*2 + 160*1 = 560 + 160 = 720
       expect(order.subtotal).toBe(720);
-      // 5% GST = 36
-      expect(order.tax).toBe(36);
-      // Total = 756
-      expect(order.total).toBe(756);
+      // GST removed: tax = 0, Total = 720
+      expect(order.tax).toBe(0);
+      expect(order.total).toBe(720);
       expect(order.status).toBe('ORDER_PLACED');
       expect(order.paymentStatus).toBe('PENDING');
 
@@ -162,9 +161,9 @@ describe('Vaan Vibes Order Creation & Billing Calculations', () => {
       expect(bill).toBeDefined();
       expect(bill?.billNumber).toContain('BILL-');
       expect(bill?.subtotal).toBe(720);
-      expect(bill?.cgst).toBe(18); // 2.5% CGST
-      expect(bill?.sgst).toBe(18); // 2.5% SGST
-      expect(bill?.total).toBe(756);
+      expect(bill?.cgst).toBe(0); // GST removed
+      expect(bill?.sgst).toBe(0); // GST removed
+      expect(bill?.total).toBe(720);
     }
   });
 

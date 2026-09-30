@@ -1,19 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { CafeStore } from '@/lib/cafe-store';
-import { OrderStatus, PaymentStatus } from '@/types/cafe';
+import { fetchFromBackend } from '@/lib/backend-api';
 
 export async function GET(
   _request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
-  const order = CafeStore.getOrderById(id);
-
-  if (!order) {
-    return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+  try {
+    const res = await fetchFromBackend(`/api/v1/orders/${id}`);
+    if (!res.ok) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    }
+    const order = await res.json();
+    return NextResponse.json({ order });
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Backend unreachable' },
+      { status: 503 }
+    );
   }
-
-  return NextResponse.json({ order });
 }
 
 export async function PATCH(
@@ -21,72 +26,36 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
-
   try {
     const body = await request.json();
-    const { status, paymentStatus, source } = body;
+    const { status } = body;
 
-    let updatedOrder;
-
-    if (status) {
-      const validStatuses: OrderStatus[] = [
-        'ORDER_PLACED',
-        'ACCEPTED',
-        'PREPARING',
-        'READY',
-        'SERVED',
-        'COMPLETED',
-        'CANCELLED',
-      ];
-
-      if (!validStatuses.includes(status)) {
-        return NextResponse.json(
-          { error: `Invalid order status: ${status}` },
-          { status: 400 }
-        );
-      }
-
-      const existing = CafeStore.getOrderById(id);
-      if (!existing) {
-        return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-      }
-
-      if (status === 'CANCELLED' && source === 'customer' && existing.status !== 'ORDER_PLACED') {
-        return NextResponse.json(
-          { error: 'Order cannot be cancelled once accepted by the kitchen' },
-          { status: 400 }
-        );
-      }
-
-      const res = CafeStore.updateOrderStatus(id, status);
-      if (!res.success) {
-        return NextResponse.json({ error: res.error }, { status: 400 });
-      }
-      updatedOrder = res.order;
+    if (!status) {
+      return NextResponse.json({ error: 'Status is required' }, { status: 400 });
     }
 
-    if (paymentStatus) {
-      const validPaymentStatuses: PaymentStatus[] = ['PENDING', 'PAID', 'REFUNDED'];
-      if (!validPaymentStatuses.includes(paymentStatus)) {
-        return NextResponse.json(
-          { error: `Invalid payment status: ${paymentStatus}` },
-          { status: 400 }
-        );
-      }
+    const res = await fetchFromBackend(`/api/v1/orders/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
 
-      const res = CafeStore.updatePaymentStatus(id, paymentStatus);
-      if (!res.success) {
-        return NextResponse.json({ error: res.error }, { status: 400 });
-      }
-      updatedOrder = res.order;
+    const data = await res.json();
+    if (!res.ok) {
+      return NextResponse.json(
+        { error: data.detail || 'Failed to update order status' },
+        { status: res.status }
+      );
     }
 
     return NextResponse.json({
       success: true,
-      order: updatedOrder || CafeStore.getOrderById(id),
+      message: `Order ${id} status updated to ${status}`,
+      order: data,
     });
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'Error processing update';
-    return NextResponse.json({ error: msg }, { status: 500 });
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Failed to update order' },
+      { status: 500 }
+    );
   }
 }

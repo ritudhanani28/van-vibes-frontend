@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { CafeStore, CAFE_INFO } from '@/lib/cafe-store';
+import { fetchFromBackend } from '@/lib/backend-api';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -16,27 +16,38 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const result = CafeStore.validateTableQR(tableId, token);
+  try {
+    const [valRes, settingsRes] = await Promise.all([
+      fetchFromBackend('/api/v1/tables/validate-qr', {
+        method: 'POST',
+        body: JSON.stringify({ tableId, token }),
+      }),
+      fetchFromBackend('/api/v1/settings'),
+    ]);
 
-  if (!result.valid || !result.table) {
+    const valData = await valRes.json();
+    if (!valRes.ok || !valData.valid || !valData.table) {
+      return NextResponse.json(
+        {
+          valid: false,
+          error: valData.message || 'Invalid or expired QR code.',
+        },
+        { status: 403 }
+      );
+    }
+
+    const cafe = settingsRes.ok ? await settingsRes.json() : null;
+
+    return NextResponse.json({
+      valid: true,
+      cafe,
+      table: valData.table,
+      message: 'QR code verified successfully',
+    });
+  } catch (err) {
     return NextResponse.json(
-      {
-        valid: false,
-        error: result.error || 'Invalid or expired QR code.',
-      },
-      { status: 403 }
+      { valid: false, error: err instanceof Error ? err.message : 'Backend unreachable' },
+      { status: 503 }
     );
   }
-
-  return NextResponse.json({
-    valid: true,
-    cafe: CAFE_INFO,
-    table: {
-      id: result.table.id,
-      tableNumber: result.table.tableNumber,
-      name: result.table.name,
-      capacity: result.table.capacity,
-      status: result.table.status,
-    },
-  });
 }

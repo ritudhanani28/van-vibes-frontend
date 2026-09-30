@@ -74,26 +74,29 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Initialize session token & load persisted cart
   useEffect(() => {
-    try {
-      let token = localStorage.getItem('vv_session_token');
-      if (!token) {
-        token = `sess_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-        localStorage.setItem('vv_session_token', token);
-      }
-      setSessionToken(token);
+    const timer = setTimeout(() => {
+      try {
+        let token = localStorage.getItem('vv_session_token');
+        if (!token) {
+          token = `sess_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+          localStorage.setItem('vv_session_token', token);
+        }
+        setSessionToken(token);
 
-      const savedCart = localStorage.getItem('vv_cart');
-      if (savedCart) {
-        setCart(JSON.parse(savedCart));
-      }
+        const savedCart = localStorage.getItem('vv_cart');
+        if (savedCart) {
+          setCart(JSON.parse(savedCart));
+        }
 
-      const savedCustomer = localStorage.getItem('vv_customer');
-      if (savedCustomer) {
-        setCustomerDetails(JSON.parse(savedCustomer));
+        const savedCustomer = localStorage.getItem('vv_customer');
+        if (savedCustomer) {
+          setCustomerDetails(JSON.parse(savedCustomer));
+        }
+      } catch {
+        // LocalStorage unavailable in SSR or private mode fallback
       }
-    } catch {
-      // LocalStorage unavailable in SSR or private mode fallback
-    }
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   // Save cart changes to localStorage
@@ -142,13 +145,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // network hiccup
     }
-  }, [table?.id, sessionToken]);
+  }, [table, sessionToken]);
 
   // Periodic poll for order status updates
   useEffect(() => {
-    fetchOrders();
+    const timer = setTimeout(() => {
+      fetchOrders();
+    }, 0);
     const interval = setInterval(fetchOrders, 4000);
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
   }, [fetchOrders]);
 
   const addItem = useCallback(
@@ -164,7 +172,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (selectedAddOns && selectedAddOns.length > 0 && item.addOns) {
         for (const addOnName of selectedAddOns) {
           const matched = item.addOns.find((a) => a.name === addOnName);
-          if (matched) finalPrice += matched.price;
+          if (matched) {
+            finalPrice += matched.price;
+          }
         }
       }
 
@@ -228,9 +238,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     [cart]
   );
 
-  const tax = useMemo(() => Math.round(subtotal * 0.05 * 100) / 100, [subtotal]);
+  const tax = 0;
 
-  const total = useMemo(() => Math.round((subtotal + tax) * 100) / 100, [subtotal, tax]);
+  const total = useMemo(() => Math.round(subtotal * 100) / 100, [subtotal]);
 
   const getItemQuantityInCart = useCallback(
     (menuItemId: string) => {
@@ -277,6 +287,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({
           tableId: table.id,
           token: table.token,
+          diningSessionId: table.activeSession?.id,
           sessionToken,
           customerName: customerDetails.name.trim(),
           customerMobile: cleanMobile,
