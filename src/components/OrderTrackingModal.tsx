@@ -17,6 +17,7 @@ function getStatusStepIndex(status: OrderStatus): number {
     case 'ORDER_PLACED':
       return 0;
     case 'ACCEPTED':
+    case 'IN_KITCHEN':
     case 'PREPARING':
     case 'SERVED':
     case 'READY':
@@ -254,14 +255,14 @@ function OrderCard({
               className={`px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-black tracking-wide uppercase border shadow-2xs ${
                 order.status === 'COMPLETED'
                   ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                  : order.status === 'ACCEPTED' || order.status === 'PREPARING' || order.status === 'SERVED' || order.status === 'READY'
+                  : order.status === 'ACCEPTED' || order.status === 'IN_KITCHEN' || order.status === 'PREPARING' || order.status === 'SERVED' || order.status === 'READY'
                   ? 'bg-blue-50 text-blue-800 border-blue-300'
                   : 'bg-amber-50 text-amber-900 border-amber-300'
               }`}
             >
               {order.status === 'PLACED' || order.status === 'ORDER_PLACED'
                 ? 'Order Placed'
-                : order.status === 'ACCEPTED' || order.status === 'PREPARING' || order.status === 'SERVED' || order.status === 'READY'
+                : order.status === 'ACCEPTED' || order.status === 'IN_KITCHEN' || order.status === 'PREPARING' || order.status === 'SERVED' || order.status === 'READY'
                 ? 'Order Accepted'
                 : order.status === 'COMPLETED'
                 ? 'Completed'
