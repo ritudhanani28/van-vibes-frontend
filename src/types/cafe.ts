@@ -105,6 +105,7 @@ export interface Order {
   tax: number; // 5% GST
   discountPercentage?: number;
   discountAmount?: number;
+  extraCharge?: number;
   total: number;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
@@ -152,6 +153,7 @@ export interface BillData {
   taxAmount: number;
   discountPercentage?: number;
   discountAmount?: number;
+  extraCharge?: number;
   total: number;
   paymentStatus: PaymentStatus;
   createdAt: string;
