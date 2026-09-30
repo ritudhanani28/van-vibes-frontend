@@ -3,7 +3,19 @@
 import React, { useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import { Order, OrderStatus } from '@/types/cafe';
-import { X, CheckCircle2, Clock, ChefHat, Sparkles, Utensils, PlusCircle, XCircle } from 'lucide-react';
+import {
+  X,
+  CheckCircle2,
+  Clock,
+  ChefHat,
+  Sparkles,
+  Utensils,
+  PlusCircle,
+  XCircle,
+  AlertTriangle,
+  AlertCircle,
+  Loader2,
+} from 'lucide-react';
 
 const STATUS_STEPS: { status: OrderStatus; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { status: 'PLACED', label: 'Order Placed', icon: Clock },
@@ -41,18 +53,63 @@ export function OrderTrackingModal() {
 
   const [activeTab, setActiveTab] = useState<'active' | 'previous'>('active');
 
-  const handleCancelOrder = async (orderId: string) => {
+  // Cancel Confirmation Popup State
+  const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [cancelSuccess, setCancelSuccess] = useState<string | null>(null);
+
+  const handleOpenCancelConfirmation = (order: Order) => {
+    setOrderToCancel(order);
+    setCancelError(null);
+  };
+
+  const handleCloseCancelConfirmation = () => {
+    if (!isCancelling) {
+      setOrderToCancel(null);
+      setCancelError(null);
+    }
+  };
+
+  const handleConfirmCancelOrder = async () => {
+    if (!orderToCancel) return;
+    setIsCancelling(true);
+    setCancelError(null);
+
     try {
-      const res = await fetch(`/api/orders/${orderId}`, {
-        method: 'PATCH',
+      const res = await fetch(`/api/orders/${orderToCancel.id}/cancel`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'CANCELLED', source: 'customer' }),
+        body: JSON.stringify({ reason: 'Customer requested cancellation' }),
       });
-      if (res.ok) {
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        const errorMsg =
+          data.error ||
+          data.detail ||
+          data.message ||
+          'Cannot cancel this order. It may have already been accepted by the kitchen.';
+        setCancelError(errorMsg);
+        // Refresh orders immediately so the UI reflects that it was accepted or progressed
         await fetchOrders();
+        setIsCancelling(false);
+        return;
       }
-    } catch {
-      // ignore
+
+      // Successful cancellation
+      await fetchOrders();
+      setCancelSuccess(`Order #${orderToCancel.id} has been cancelled successfully.`);
+      setTimeout(() => setCancelSuccess(null), 4500);
+      setOrderToCancel(null);
+      setIsCancelling(false);
+      // Switch to previous tab to let customer view their cancelled order
+      setActiveTab('previous');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Network error while cancelling order';
+      setCancelError(msg);
+      setIsCancelling(false);
     }
   };
 
@@ -86,8 +143,25 @@ export function OrderTrackingModal() {
             </button>
           </div>
 
+          {/* Success Banner */}
+          {cancelSuccess && (
+            <div className="mx-4 mt-3 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex items-center justify-between shadow-xs animate-in fade-in slide-in-from-top-2">
+              <div className="flex items-center gap-2 font-medium">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{cancelSuccess}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCancelSuccess(null)}
+                className="text-emerald-500 hover:text-emerald-700 p-0.5"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
           {/* Navigation Tabs */}
-          <div className="flex border-b border-brand-beige-dark/60 bg-brand-beige-light shrink-0">
+          <div className="flex border-b border-brand-beige-dark/60 bg-brand-beige-light shrink-0 mt-1">
             <button
               onClick={() => setActiveTab('active')}
               className={`flex-1 py-2.5 text-center text-xs font-bold border-b-2 flex items-center justify-center gap-1.5 transition-all min-h-[40px] ${
@@ -142,7 +216,11 @@ export function OrderTrackingModal() {
               ) : (
                 <div className="space-y-3 sm:space-y-4">
                   {activeOrders.map((order) => (
-                    <OrderCard key={order.id} order={order} onCancel={handleCancelOrder} />
+                    <OrderCard
+                      key={order.id}
+                      order={order}
+                      onRequestCancel={handleOpenCancelConfirmation}
+                    />
                   ))}
                 </div>
               )
@@ -153,7 +231,11 @@ export function OrderTrackingModal() {
             ) : (
               <div className="space-y-3 sm:space-y-4">
                 {previousOrders.map((order) => (
-                  <OrderCard key={order.id} order={order} onCancel={handleCancelOrder} />
+                  <OrderCard
+                    key={order.id}
+                    order={order}
+                    onRequestCancel={handleOpenCancelConfirmation}
+                  />
                 ))}
               </div>
             )}
@@ -171,21 +253,98 @@ export function OrderTrackingModal() {
           </div>
         </div>
       </div>
+
+      {/* ============================================================== */}
+      {/* CANCEL ORDER CONFIRMATION MODAL POPUP */}
+      {/* ============================================================== */}
+      {orderToCancel && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={handleCloseCancelConfirmation}
+        >
+          <div
+            className="w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-brand-beige-dark overflow-hidden p-6 space-y-4 animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header Icon & Title */}
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-red-100 flex items-center justify-center text-red-600 shrink-0">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="font-black text-lg text-brand-green leading-tight">
+                  Cancel Order?
+                </h4>
+                <p className="text-xs text-brand-green/60 font-mono mt-0.5">
+                  Order #{orderToCancel.id}
+                </p>
+              </div>
+            </div>
+
+            {/* Error Message if backend rejects (e.g. accepted by kitchen) */}
+            {cancelError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-red-500 mt-0.5" />
+                <span className="leading-relaxed">{cancelError}</span>
+              </div>
+            )}
+
+            {/* Warning details */}
+            <div className="bg-brand-beige-light/70 p-3.5 rounded-2xl border border-brand-beige-dark/60 text-xs text-brand-green/80 space-y-2">
+              <div className="flex justify-between items-center text-brand-green font-bold text-xs">
+                <span>Table {orderToCancel.tableNumber}</span>
+                <span className="font-mono">Total: ₹{orderToCancel.total.toFixed(2)}</span>
+              </div>
+              <p className="text-[11px] text-brand-green/70 leading-relaxed">
+                Orders can only be cancelled <span className="font-bold text-brand-green">before</span> they are accepted by the kitchen. Once accepted, preparation starts and the order cannot be cancelled.
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                disabled={isCancelling}
+                onClick={handleCloseCancelConfirmation}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-brand-beige-dark font-bold text-xs text-brand-green/70 hover:bg-brand-beige transition-colors disabled:opacity-50 cursor-pointer min-h-[40px]"
+              >
+                Keep Order
+              </button>
+              <button
+                type="button"
+                disabled={isCancelling}
+                onClick={handleConfirmCancelOrder}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer min-h-[40px]"
+              >
+                {isCancelling ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Cancelling...</span>
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="w-3.5 h-3.5" />
+                    <span>Yes, Cancel</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
 
 function OrderCard({
   order,
-  onCancel,
+  onRequestCancel,
 }: {
   order: Order;
-  onCancel: (orderId: string) => Promise<void>;
+  onRequestCancel: (order: Order) => void;
 }) {
   const currentStep = getStatusStepIndex(order.status);
   const isCancelled = order.status === 'CANCELLED';
-  const [isCancelling, setIsCancelling] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
 
   return (
     <div className="p-3.5 sm:p-4 rounded-2xl bg-white border border-brand-beige-dark/80 shadow-xs space-y-3.5 sm:space-y-4">
@@ -203,48 +362,22 @@ function OrderCard({
           </p>
         </div>
 
-        {/* Cancel Button: ONLY visible and active when order is ORDER_PLACED (till accepted). Removed once accepted. */}
+        {/* Cancel Button: ONLY visible and active when order is PLACED / ORDER_PLACED (till accepted by kitchen/admin). */}
         {(order.status === 'PLACED' || order.status === 'ORDER_PLACED') && (
           <div className="shrink-0">
-            {!showConfirm ? (
-              <button
-                type="button"
-                onClick={() => setShowConfirm(true)}
-                className="px-2.5 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 font-bold text-[11px] flex items-center gap-1 transition-all active:scale-95 shadow-2xs min-h-[32px]"
-                title="Cancel order before it is accepted by kitchen"
-              >
-                <XCircle className="w-3.5 h-3.5" />
-                <span>Cancel Order</span>
-              </button>
-            ) : (
-              <div className="flex items-center gap-1.5 p-1 rounded-lg bg-red-50 border border-red-200 animate-in fade-in duration-150">
-                <span className="text-[10px] font-bold text-red-700 pl-1">Cancel?</span>
-                <button
-                  type="button"
-                  disabled={isCancelling}
-                  onClick={async () => {
-                    setIsCancelling(true);
-                    await onCancel(order.id);
-                    setIsCancelling(false);
-                    setShowConfirm(false);
-                  }}
-                  className="px-2 py-0.5 rounded bg-red-600 hover:bg-red-700 text-white font-black text-[10px] uppercase shadow-2xs transition-all disabled:opacity-50 min-h-[28px]"
-                >
-                  {isCancelling ? '...' : 'Yes'}
-                </button>
-                <button
-                  type="button"
-                  disabled={isCancelling}
-                  onClick={() => setShowConfirm(false)}
-                  className="px-1.5 py-0.5 rounded bg-white hover:bg-brand-beige text-brand-green font-bold text-[10px] border border-brand-beige-dark transition-all min-h-[28px]"
-                >
-                  No
-                </button>
-              </div>
-            )}
+            <button
+              type="button"
+              onClick={() => onRequestCancel(order)}
+              className="px-2.5 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 font-bold text-[11px] flex items-center gap-1 transition-all active:scale-95 shadow-2xs min-h-[32px] cursor-pointer"
+              title="Cancel order before it is accepted by kitchen"
+            >
+              <XCircle className="w-3.5 h-3.5" />
+              <span>Cancel Order</span>
+            </button>
           </div>
         )}
       </div>
+
 
       {/* Status Progress Stepper */}
       {!isCancelled ? (

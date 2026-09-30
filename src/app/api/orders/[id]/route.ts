@@ -21,6 +21,52 @@ export async function GET(
   }
 }
 
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id } = await context.params;
+  try {
+    let reason = 'Customer requested cancellation';
+    try {
+      const body = await request.json();
+      if (body?.reason) reason = body.reason;
+    } catch {
+      // body is optional
+    }
+
+    const res = await fetchFromBackend(`/api/v1/orders/${id}/cancel`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: data.message || data.detail || 'Cannot cancel this order.',
+        },
+        { status: res.status }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: data.message || `Order ${id} has been cancelled`,
+      order: data.order,
+    });
+  } catch (err) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: err instanceof Error ? err.message : 'Backend unreachable',
+      },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -28,29 +74,37 @@ export async function PATCH(
   const { id } = await context.params;
   try {
     const body = await request.json();
-    const { status } = body;
+    const { status, reason } = body;
 
     if (!status) {
       return NextResponse.json({ error: 'Status is required' }, { status: 400 });
     }
 
-    const res = await fetchFromBackend(`/api/v1/orders/${id}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
-    });
+    let res: Response;
+    if (status === 'CANCELLED') {
+      res = await fetchFromBackend(`/api/v1/orders/${id}/cancel`, {
+        method: 'POST',
+        body: JSON.stringify({ reason: reason || 'Customer cancelled' }),
+      });
+    } else {
+      res = await fetchFromBackend(`/api/v1/orders/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      });
+    }
 
     const data = await res.json();
     if (!res.ok) {
       return NextResponse.json(
-        { error: data.detail || 'Failed to update order status' },
+        { error: data.message || data.detail || 'Failed to update order status' },
         { status: res.status }
       );
     }
 
     return NextResponse.json({
       success: true,
-      message: `Order ${id} status updated to ${status}`,
-      order: data,
+      message: data.message || `Order ${id} status updated to ${status}`,
+      order: data.order || data,
     });
   } catch (err) {
     return NextResponse.json(
@@ -59,3 +113,4 @@ export async function PATCH(
     );
   }
 }
+
