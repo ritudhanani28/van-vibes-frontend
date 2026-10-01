@@ -4,8 +4,8 @@
  */
 
 export const envConfig = {
-  // Application Port
-  port: parseInt(process.env.PORT || '3000', 10),
+  // Application Port (Production: 4000)
+  port: parseInt(process.env.PORT || '4000', 10),
 
   // Environment mode
   isProduction: process.env.NODE_ENV === 'production',
@@ -13,13 +13,14 @@ export const envConfig = {
 
   /**
    * Resolves the server-side FastAPI backend URL (used by Next.js Server Route Handlers).
+   * Backend runs on port 9000.
    */
   getFastApiBackendUrl(): string {
     const envUrl = process.env.FASTAPI_BACKEND_URL;
     if (envUrl && envUrl.trim()) {
       return envUrl.trim().replace(/\/+$/, '');
     }
-    return 'http://127.0.0.1:8000';
+    return 'http://127.0.0.1:9000';
   },
 
   /**
@@ -36,16 +37,16 @@ export const envConfig = {
     }
 
     if (typeof window !== 'undefined') {
-      return `${window.location.protocol}//${window.location.hostname}:8000/api/v1`;
+      return `${window.location.protocol}//${window.location.hostname}:9000/api/v1`;
     }
 
-    return 'http://127.0.0.1:8000/api/v1';
+    return 'http://127.0.0.1:9000/api/v1';
   },
 
   /**
    * Dynamically resolves the live WebSocket Stream URL.
    * - Automatically selects wss:// on https: and ws:// on http:
-   * - Dynamically falls back to current hostname
+   * - Dynamically falls back to current hostname on port 9000
    */
   getWebSocketUrl(): string {
     const envWsUrl = process.env.NEXT_PUBLIC_WS_URL;
@@ -65,10 +66,10 @@ export const envConfig = {
     if (typeof window !== 'undefined') {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const hostname = window.location.hostname || '127.0.0.1';
-      return `${protocol}//${hostname}:8000/api/v1/ws/orders`;
+      return `${protocol}//${hostname}:9000/api/v1/ws/orders`;
     }
 
-    return 'ws://127.0.0.1:8000/api/v1/ws/orders';
+    return 'ws://127.0.0.1:9000/api/v1/ws/orders';
   },
 
   /**
@@ -82,6 +83,6 @@ export const envConfig = {
     if (typeof window !== 'undefined') {
       return window.location.origin;
     }
-    return 'http://localhost:3000';
+    return 'http://localhost:4000';
   },
 };

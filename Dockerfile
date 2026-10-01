@@ -45,7 +45,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
-    PORT=3000 \
+    PORT=4000 \
     HOSTNAME="0.0.0.0"
 
 # Create non-root user for security hardening
@@ -63,10 +63,10 @@ ENV UV_THREADPOOL_SIZE=64 \
 
 USER nextjs
 
-EXPOSE 3000
+EXPOSE 4000
 
 # Automated health probe using Next.js health API
 HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
-    CMD wget -qO- http://localhost:3000/api/health || exit 1
+    CMD wget -qO- http://localhost:4000/api/health || exit 1
 
 CMD ["node", "cluster.js"]

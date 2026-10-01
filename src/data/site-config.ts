@@ -8,7 +8,7 @@ export const SiteConfig = {
   description:
     process.env.NEXT_PUBLIC_APP_DESCRIPTION ||
     'A vibrant restro and cafe serving artisanal coffee, gourmet continental & indian cuisine, refreshing drinks, and memorable moments in a warm, aesthetic atmosphere.',
-  url: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+  url: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:4000',
   address: 'Main Promenade, Serenita Arts Quarter, Surat, Gujarat',
   phone: '+91 98765 43210',
   gstin: '24AAAAA0000A1Z5',
