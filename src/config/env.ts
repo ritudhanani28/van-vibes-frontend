@@ -20,7 +20,7 @@ export const envConfig = {
     if (envUrl && envUrl.trim()) {
       return envUrl.trim().replace(/\/+$/, '');
     }
-    return 'http://127.0.0.1:9000';
+    return process.env.NODE_ENV === 'production' ? 'http://backend:9000' : 'http://127.0.0.1:9000';
   },
 
   /**

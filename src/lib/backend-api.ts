@@ -1,15 +1,98 @@
 import { envConfig } from '@/config/env';
 
-export const FASTAPI_BACKEND_URL = envConfig.getFastApiBackendUrl();
+/**
+ * Resilient Backend API Client with Multi-Target Failover & In-Memory Route Caching.
+ * Automatically resolves and connects across Docker bridge networks, remote VPS, and local environments.
+ */
+
+let cachedWorkingBackendUrl: string | null = null;
+
+function getCandidateUrls(): string[] {
+  const envUrl = process.env.FASTAPI_BACKEND_URL?.trim() || '';
+  const isProd = process.env.NODE_ENV === 'production';
+
+  // Explicit remote backend config takes absolute priority
+  const explicitRemote =
+    envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1') ? envUrl : null;
+
+  const candidates: string[] = [];
+
+  if (explicitRemote) {
+    candidates.push(explicitRemote);
+  }
+
+  if (isProd) {
+    // In production / Docker containers, loopback (127.0.0.1) points to container itself,
+    // so container services and VPS IP must be tried first.
+    candidates.push(
+      'http://backend:9000',
+      'http://van_vibes_backend:9000',
+      'http://84.247.143.242:9000',
+      'http://host.docker.internal:9000',
+      'http://127.0.0.1:9000',
+      'http://localhost:9000'
+    );
+  } else {
+    // In local development, check local loopback first
+    candidates.push(
+      envUrl || 'http://127.0.0.1:9000',
+      'http://localhost:9000',
+      'http://backend:9000',
+      'http://84.247.143.242:9000'
+    );
+  }
+
+  // Deduplicate and strip trailing slashes
+  return Array.from(new Set(candidates.filter(Boolean).map((u) => u.trim().replace(/\/+$/, ''))));
+}
 
 export async function fetchFromBackend(endpoint: string, options: RequestInit = {}) {
-  const url = `${FASTAPI_BACKEND_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
-  return fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    },
-    cache: 'no-store',
-  });
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+
+  // 1. Try cached working candidate first for 0ms discovery overhead
+  if (cachedWorkingBackendUrl) {
+    try {
+      const response = await fetch(`${cachedWorkingBackendUrl}${cleanEndpoint}`, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(options.headers || {}),
+        },
+        cache: 'no-store',
+        signal: AbortSignal.timeout(4000),
+      });
+      return response;
+    } catch {
+      // Cached URL failed or backend restarted; invalidate and failover
+      cachedWorkingBackendUrl = null;
+    }
+  }
+
+  // 2. Multi-target candidate probing
+  const candidates = getCandidateUrls();
+  let lastError: unknown = null;
+
+  for (const base of candidates) {
+    try {
+      const url = `${base}${cleanEndpoint}`;
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(options.headers || {}),
+        },
+        cache: 'no-store',
+        signal: AbortSignal.timeout(3000),
+      });
+
+      // Cache this working base URL for subsequent calls
+      cachedWorkingBackendUrl = base;
+      return response;
+    } catch (err) {
+      lastError = err;
+      continue;
+    }
+  }
+
+  throw lastError || new Error(`All backend candidate URLs unreachable for ${cleanEndpoint}`);
 }
