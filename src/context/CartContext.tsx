@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useSyncExternalStore } from 'react';
 import { MenuCategory, CartItem, CustomerDetails, MenuItem, Order, TableInfo } from '@/types/cafe';
 import { MENU_ITEMS, MENU_CATEGORIES } from '@/data/vaan-vibes-menu';
+import { envConfig } from '@/config/env';
 
 const emptySubscribe = () => () => {};
 
@@ -231,9 +232,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     const connectWs = () => {
       try {
-        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsHost = window.location.hostname || '127.0.0.1';
-        const wsUrl = process.env.NEXT_PUBLIC_WS_URL || `${wsProtocol}//${wsHost}:8000/api/v1/ws/orders`;
+        const wsUrl = envConfig.getWebSocketUrl();
         socket = new WebSocket(wsUrl);
 
         socket.onmessage = (event) => {

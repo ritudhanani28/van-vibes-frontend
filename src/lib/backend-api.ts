@@ -1,5 +1,6 @@
-export const FASTAPI_BACKEND_URL =
-  process.env.FASTAPI_BACKEND_URL || 'http://127.0.0.1:8000';
+import { envConfig } from '@/config/env';
+
+export const FASTAPI_BACKEND_URL = envConfig.getFastApiBackendUrl();
 
 export async function fetchFromBackend(endpoint: string, options: RequestInit = {}) {
   const url = `${FASTAPI_BACKEND_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
