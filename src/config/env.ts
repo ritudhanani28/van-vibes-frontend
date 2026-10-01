@@ -25,19 +25,28 @@ export const envConfig = {
 
   /**
    * Resolves the public REST API base URL.
+   * In browser, dynamically matches current hostname on port 9000 if localhost is configured.
    */
   getApiBaseUrl(): string {
-    const envUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (envUrl && envUrl.trim()) {
-      let resolved = envUrl.trim();
-      if (typeof window !== 'undefined' && window.location.protocol === 'https:' && resolved.startsWith('http://')) {
-        resolved = resolved.replace(/^http:\/\//, 'https://');
-      }
-      return resolved.replace(/\/+$/, '');
-    }
-
     if (typeof window !== 'undefined') {
-      return `${window.location.protocol}//${window.location.hostname}:9000/api/v1`;
+      const hostname = window.location.hostname;
+      const protocol = window.location.protocol;
+      const envUrl = process.env.NEXT_PUBLIC_API_URL;
+
+      if (
+        envUrl &&
+        envUrl.trim() &&
+        !envUrl.includes('localhost') &&
+        !envUrl.includes('127.0.0.1')
+      ) {
+        let resolved = envUrl.trim();
+        if (protocol === 'https:' && resolved.startsWith('http://')) {
+          resolved = resolved.replace(/^http:\/\//, 'https://');
+        }
+        return resolved.replace(/\/+$/, '');
+      }
+
+      return `${protocol}//${hostname}:9000/api/v1`;
     }
 
     return 'http://127.0.0.1:9000/api/v1';
@@ -45,27 +54,28 @@ export const envConfig = {
 
   /**
    * Dynamically resolves the live WebSocket Stream URL.
+   * - In browser, dynamically matches current hostname on port 9000
    * - Automatically selects wss:// on https: and ws:// on http:
-   * - Dynamically falls back to current hostname on port 9000
    */
   getWebSocketUrl(): string {
-    const envWsUrl = process.env.NEXT_PUBLIC_WS_URL;
-
-    if (envWsUrl && envWsUrl.trim()) {
-      let baseWsUrl = envWsUrl.trim();
-      if (
-        typeof window !== 'undefined' &&
-        window.location.protocol === 'https:' &&
-        baseWsUrl.startsWith('ws://')
-      ) {
-        baseWsUrl = baseWsUrl.replace(/^ws:\/\//, 'wss://');
-      }
-      return baseWsUrl;
-    }
-
     if (typeof window !== 'undefined') {
+      const hostname = window.location.hostname;
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const hostname = window.location.hostname || '127.0.0.1';
+      const envWsUrl = process.env.NEXT_PUBLIC_WS_URL;
+
+      if (
+        envWsUrl &&
+        envWsUrl.trim() &&
+        !envWsUrl.includes('localhost') &&
+        !envWsUrl.includes('127.0.0.1')
+      ) {
+        let baseWsUrl = envWsUrl.trim();
+        if (protocol === 'wss:' && baseWsUrl.startsWith('ws://')) {
+          baseWsUrl = baseWsUrl.replace(/^ws:\/\//, 'wss://');
+        }
+        return baseWsUrl;
+      }
+
       return `${protocol}//${hostname}:9000/api/v1/ws/orders`;
     }
 
@@ -76,12 +86,12 @@ export const envConfig = {
    * Resolves public customer app URL for metadata, SEO, and share links.
    */
   getPublicAppUrl(): string {
+    if (typeof window !== 'undefined') {
+      return window.location.origin;
+    }
     const envUrl = process.env.NEXT_PUBLIC_APP_URL;
     if (envUrl && envUrl.trim()) {
       return envUrl.trim().replace(/\/+$/, '');
-    }
-    if (typeof window !== 'undefined') {
-      return window.location.origin;
     }
     return 'http://localhost:4000';
   },
