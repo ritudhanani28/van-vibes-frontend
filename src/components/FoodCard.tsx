@@ -16,6 +16,7 @@ export function FoodCard({ item, index = 0 }: Props) {
   const { addItem, updateQuantity, cart, getItemQuantityInCart } = useCart();
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
 
+  const isAvailable = item.isAvailable !== false;
   const quantityInCart = getItemQuantityInCart(item.id);
   const hasOptions = (item.options && item.options.length > 0) || (item.addOns && item.addOns.length > 0);
 
@@ -23,6 +24,7 @@ export function FoodCard({ item, index = 0 }: Props) {
   const existingCartItem = cart.find((ci) => ci.menuItemId === item.id);
 
   const handleInitialAdd = () => {
+    if (!isAvailable) return;
     if (hasOptions) {
       setIsCustomizeOpen(true);
     } else {
@@ -31,6 +33,7 @@ export function FoodCard({ item, index = 0 }: Props) {
   };
 
   const handleIncrement = () => {
+    if (!isAvailable) return;
     if (hasOptions) {
       setIsCustomizeOpen(true);
     } else if (existingCartItem) {
@@ -56,19 +59,29 @@ export function FoodCard({ item, index = 0 }: Props) {
         staggerBaseDelay={75}
         className="h-full"
       >
-        <div className="group relative bg-white rounded-2xl border border-brand-beige-dark/70 hover:border-brand-green/30 p-3.5 sm:p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-md flex flex-col justify-between overflow-hidden h-full">
+        <div
+          className={`group relative rounded-2xl border p-3.5 sm:p-4 transition-all duration-200 flex flex-col justify-between overflow-hidden h-full ${
+            isAvailable
+              ? 'bg-white border-brand-beige-dark/70 hover:border-brand-green/30 hover:-translate-y-1 hover:shadow-md'
+              : 'bg-gray-50/80 border-brand-beige-dark/50 opacity-80'
+          }`}
+        >
         {/* Top Badges */}
         <div className="flex items-start justify-between gap-2 mb-2">
-          {/* Veg Dot Symbol */}
+          {/* Veg Dot Symbol & Popular/Unavailable Badge */}
           <div className="flex items-center gap-1.5">
             <span className="w-4 h-4 rounded border border-emerald-600 p-0.5 flex items-center justify-center bg-emerald-50 shrink-0">
               <span className="w-2 h-2 rounded-full bg-emerald-600" />
             </span>
-            {item.popular && (
+            {!isAvailable ? (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 text-[10px] font-black uppercase tracking-wider whitespace-nowrap">
+                Sold Out
+              </span>
+            ) : item.popular ? (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand-gold/15 text-brand-gold text-[10px] font-black uppercase tracking-wider whitespace-nowrap">
                 <Sparkles className="w-2.5 h-2.5" /> Popular
               </span>
-            )}
+            ) : null}
           </div>
 
           {/* Category Tag */}
@@ -90,7 +103,7 @@ export function FoodCard({ item, index = 0 }: Props) {
         </div>
 
         {/* Options note if available */}
-        {hasOptions && (
+        {hasOptions && isAvailable && (
           <div className="mb-3">
             <button
               onClick={() => setIsCustomizeOpen(true)}
@@ -115,7 +128,16 @@ export function FoodCard({ item, index = 0 }: Props) {
 
           {/* Action Button or Quantity Selector */}
           <div>
-            {quantityInCart > 0 ? (
+            {!isAvailable ? (
+              <button
+                type="button"
+                disabled
+                aria-label={`${item.name} is currently unavailable`}
+                className="flex items-center gap-1 px-3 sm:px-3.5 py-1.5 rounded-full bg-gray-100 text-gray-400 font-bold text-xs border border-gray-200 cursor-not-allowed min-h-[36px] select-none"
+              >
+                <span>Unavailable</span>
+              </button>
+            ) : quantityInCart > 0 ? (
               <div className="flex items-center gap-1.5 sm:gap-2 bg-brand-green text-brand-beige px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full shadow-xs">
                 <button
                   type="button"

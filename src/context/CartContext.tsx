@@ -1,7 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useSyncExternalStore } from 'react';
-import { CartItem, CustomerDetails, MenuItem, Order, TableInfo } from '@/types/cafe';
+import { MenuCategory, CartItem, CustomerDetails, MenuItem, Order, TableInfo } from '@/types/cafe';
+import { MENU_ITEMS, MENU_CATEGORIES } from '@/data/vaan-vibes-menu';
 
 const emptySubscribe = () => () => {};
 
@@ -21,6 +22,10 @@ interface CartContextType {
   searchQuery: string;
   isPlacingOrder: boolean;
   orderError: string | null;
+
+  menuItems: MenuItem[];
+  categories: MenuCategory[];
+  refetchMenu: () => Promise<void>;
 
   setTable: (table: TableInfo) => void;
   addItem: (
@@ -180,6 +185,111 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     };
   }, [fetchOrders]);
 
+  // Dynamic Menu Catalog & Categories from Backend
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(MENU_ITEMS);
+  const [categories, setCategories] = useState<MenuCategory[]>(MENU_CATEGORIES);
+
+  const refetchMenu = useCallback(async () => {
+    try {
+      const res = await fetch('/api/menu');
+      if (!res.ok) return;
+      const data = await res.json();
+      if (Array.isArray(data.items) && data.items.length > 0) {
+        setMenuItems(data.items);
+      }
+      if (Array.isArray(data.categories) && data.categories.length > 0) {
+        setCategories(data.categories);
+      }
+    } catch {
+      // offline fallback
+    }
+  }, []);
+
+  // Sync menu on initial mount and whenever browser window regains focus
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      refetchMenu();
+    }, 0);
+
+    const handleFocus = () => {
+      refetchMenu();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [refetchMenu]);
+
+  // Live WebSocket connection to push real-time availability/edit/delete changes
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let socket: WebSocket | null = null;
+    let reconnectTimeout: NodeJS.Timeout | null = null;
+    let isMounted = true;
+
+    const connectWs = () => {
+      try {
+        const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://127.0.0.1:8000/api/v1/ws/orders';
+        socket = new WebSocket(wsUrl);
+
+        socket.onmessage = (event) => {
+          try {
+            const parsed = JSON.parse(event.data);
+            if (!parsed?.event) return;
+
+            if (parsed.event === 'MENU_AVAILABILITY_CHANGED') {
+              const itemId = parsed.data?.itemId || parsed.data?.id;
+              const isAvailable = parsed.data?.isAvailable;
+              if (itemId !== undefined && isAvailable !== undefined) {
+                setMenuItems((prev) =>
+                  prev.map((item) => (item.id === itemId ? { ...item, isAvailable } : item))
+                );
+              }
+            } else if (parsed.event === 'MENU_ITEM_UPDATED') {
+              const updatedItem = parsed.data;
+              if (updatedItem?.id) {
+                setMenuItems((prev) =>
+                  prev.map((item) => (item.id === updatedItem.id ? { ...item, ...updatedItem } : item))
+                );
+              }
+            } else if (parsed.event === 'MENU_ITEM_DELETED') {
+              const itemId = parsed.data?.itemId || parsed.data?.id;
+              if (itemId) {
+                setMenuItems((prev) => prev.filter((item) => item.id !== itemId));
+              }
+            }
+          } catch {
+            // ignore non-json
+          }
+        };
+
+        socket.onclose = () => {
+          if (isMounted) {
+            reconnectTimeout = setTimeout(connectWs, 3000);
+          }
+        };
+
+        socket.onerror = () => {
+          if (socket) socket.close();
+        };
+      } catch {
+        if (isMounted) {
+          reconnectTimeout = setTimeout(connectWs, 5000);
+        }
+      }
+    };
+
+    connectWs();
+
+    return () => {
+      isMounted = false;
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
+      if (socket) socket.close();
+    };
+  }, []);
+
   const addItem = useCallback(
     (
       item: MenuItem,
@@ -188,6 +298,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       selectedAddOns?: string[],
       specialInstructions?: string
     ) => {
+      // Guard against adding unavailable items
+      if (item.isAvailable === false) {
+        return;
+      }
+
       // Calculate unit price with add-ons
       let finalPrice = item.price;
       if (selectedAddOns && selectedAddOns.length > 0 && item.addOns) {
@@ -370,6 +485,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         searchQuery,
         isPlacingOrder,
         orderError,
+        menuItems,
+        categories,
+        refetchMenu,
         setTable,
         addItem,
         updateQuantity,

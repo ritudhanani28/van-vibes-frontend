@@ -1,12 +1,11 @@
 'use client';
 
 import React, { useRef, useState, useEffect, useMemo } from 'react';
-import { MENU_CATEGORIES, MENU_ITEMS } from '@/data/vaan-vibes-menu';
 import { useCart } from '@/context/CartContext';
 import { Search, X, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 
 export function CategoryNav() {
-  const { activeCategory, setActiveCategory, searchQuery, setSearchQuery, setIsSearchOpen } = useCart();
+  const { activeCategory, setActiveCategory, searchQuery, setSearchQuery, setIsSearchOpen, menuItems, categories } = useCart();
   const scrollRef = useRef<HTMLDivElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const [isFocused, setIsFocused] = useState(false);
@@ -58,7 +57,7 @@ export function CategoryNav() {
     if (!searchQuery.trim()) return [];
     const q = searchQuery.toLowerCase().trim();
 
-    return MENU_CATEGORIES.filter((cat) => {
+    return categories.filter((cat) => {
       if (cat.id === 'all') return false;
       const catName = cat.name.toLowerCase();
       const catSlug = cat.slug.toLowerCase();
@@ -69,14 +68,14 @@ export function CategoryNav() {
       }
 
       // Any items in this category match the query
-      return MENU_ITEMS.some(
+      return menuItems.some(
         (item) =>
           item.category === cat.slug &&
           (item.name.toLowerCase().includes(q) ||
             (item.description && item.description.toLowerCase().includes(q)))
       );
     });
-  }, [searchQuery]);
+  }, [searchQuery, categories, menuItems]);
 
   const handleSelectSection = (slug: string) => {
     setActiveCategory(slug);
@@ -91,7 +90,7 @@ export function CategoryNav() {
   };
 
   const getCategoryCount = (slug: string) => {
-    return MENU_ITEMS.filter((i) => i.category === slug).length;
+    return menuItems.filter((i) => i.category === slug).length;
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -228,7 +227,7 @@ export function CategoryNav() {
             ref={scrollRef}
             className="flex-1 flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar scroll-smooth py-1"
           >
-            {MENU_CATEGORIES.map((cat) => {
+            {categories.map((cat) => {
               const isActive = activeCategory === cat.slug;
               return (
                 <button

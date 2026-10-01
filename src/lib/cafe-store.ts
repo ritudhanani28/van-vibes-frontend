@@ -241,6 +241,9 @@ export const CafeStore = {
       if (!canonicalItem) {
         return { success: false, error: `Invalid item selected: ${item.name}` };
       }
+      if (canonicalItem.isAvailable === false) {
+        return { success: false, error: `"${canonicalItem.name}" is currently unavailable` };
+      }
 
       const qty = Math.max(1, Math.min(item.quantity || 1, 50));
       const basePrice = canonicalItem.price;

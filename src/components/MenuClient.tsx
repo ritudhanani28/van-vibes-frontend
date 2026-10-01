@@ -11,7 +11,6 @@ import { OrderConfirmationModal } from '@/components/OrderConfirmationModal';
 import { OrderTrackingModal } from '@/components/OrderTrackingModal';
 import { SearchModal } from '@/components/SearchModal';
 import { ScrollReveal } from '@/components/ScrollReveal';
-import { MENU_ITEMS, MENU_CATEGORIES } from '@/data/vaan-vibes-menu';
 import { AlertTriangle, ArrowRight, ShieldCheck, Search } from 'lucide-react';
 import Link from 'next/link';
 
@@ -31,6 +30,8 @@ export function MenuClient({ defaultCafeId }: { defaultCafeId?: string } = {}) {
     itemCount,
     total,
     setIsCartOpen,
+    menuItems,
+    categories,
   } = useCart();
 
   const [isValidating, setIsValidating] = useState(false);
@@ -149,7 +150,7 @@ export function MenuClient({ defaultCafeId }: { defaultCafeId?: string } = {}) {
 
   // Filter items based on Category & Search Query
   const filteredItems = useMemo(() => {
-    let items = MENU_ITEMS;
+    let items = menuItems;
 
     // Filter by active category
     if (activeCategory && activeCategory !== 'all') {
@@ -165,7 +166,7 @@ export function MenuClient({ defaultCafeId }: { defaultCafeId?: string } = {}) {
         const name = i.name.toLowerCase();
         const categorySlug = i.category.toLowerCase();
         const categoryName = (
-          MENU_CATEGORIES.find((c) => c.slug === i.category)?.name || ''
+          categories.find((c) => c.slug === i.category)?.name || ''
         ).toLowerCase();
         const desc = (i.description || '').toLowerCase();
 
@@ -191,14 +192,14 @@ export function MenuClient({ defaultCafeId }: { defaultCafeId?: string } = {}) {
     }
 
     return items;
-  }, [activeCategory, searchQuery]);
+  }, [activeCategory, searchQuery, menuItems, categories]);
 
   // Group items by category whenever 'all' is selected (with or without search query)
   const groupedItems = useMemo(() => {
     if (activeCategory !== 'all') return null;
 
-    const groups: { category: (typeof MENU_CATEGORIES)[0]; items: typeof MENU_ITEMS }[] = [];
-    for (const cat of MENU_CATEGORIES) {
+    const groups: { category: (typeof categories)[0]; items: typeof menuItems }[] = [];
+    for (const cat of categories) {
       if (cat.id === 'all') continue;
       const matching = filteredItems.filter((i) => i.category === cat.slug);
       if (matching.length > 0) {
@@ -206,7 +207,7 @@ export function MenuClient({ defaultCafeId }: { defaultCafeId?: string } = {}) {
       }
     }
     return groups.length > 0 ? groups : null;
-  }, [activeCategory, filteredItems]);
+  }, [activeCategory, filteredItems, categories]);
 
   return (
     <div className="min-h-screen bg-brand-beige-light flex flex-col font-sans pb-24">

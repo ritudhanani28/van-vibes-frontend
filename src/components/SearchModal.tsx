@@ -2,7 +2,6 @@
 
 import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import { useCart } from '@/context/CartContext';
-import { MENU_CATEGORIES, MENU_ITEMS } from '@/data/vaan-vibes-menu';
 import { MenuItem } from '@/types/cafe';
 import {
   Search,
@@ -27,6 +26,8 @@ export function SearchModal() {
     updateQuantity,
     cart,
     getItemQuantityInCart,
+    menuItems,
+    categories,
   } = useCart();
 
   const [localQuery, setLocalQuery] = useState(searchQuery);
@@ -139,7 +140,7 @@ export function SearchModal() {
     if (!localQuery.trim()) return [];
     const q = localQuery.toLowerCase().trim();
 
-    return MENU_CATEGORIES.filter((cat) => {
+    return categories.filter((cat) => {
       if (cat.id === 'all') return false;
       const catName = cat.name.toLowerCase();
       const catSlug = cat.slug.toLowerCase();
@@ -148,14 +149,14 @@ export function SearchModal() {
         return true;
       }
 
-      return MENU_ITEMS.some(
+      return menuItems.some(
         (item) =>
           item.category === cat.slug &&
           (item.name.toLowerCase().includes(q) ||
             (item.description && item.description.toLowerCase().includes(q)))
       );
     });
-  }, [localQuery]);
+  }, [localQuery, categories, menuItems]);
 
   // Computed matching dishes
   const matchingItems = useMemo(() => {
@@ -163,11 +164,11 @@ export function SearchModal() {
     const q = localQuery.toLowerCase().trim();
     const words = q.split(/\s+/).filter(Boolean);
 
-    return MENU_ITEMS.filter((item) => {
+    return menuItems.filter((item) => {
       const name = item.name.toLowerCase();
       const cat = item.category.toLowerCase();
       const catName = (
-        MENU_CATEGORIES.find((c) => c.slug === item.category)?.name || ''
+        categories.find((c) => c.slug === item.category)?.name || ''
       ).toLowerCase();
       const desc = (item.description || '').toLowerCase();
 
@@ -183,12 +184,12 @@ export function SearchModal() {
           desc.includes(w)
       );
     });
-  }, [localQuery]);
+  }, [localQuery, categories, menuItems]);
 
   // Quick popular picks when search is clean/empty
   const popularPicks = useMemo(() => {
-    return MENU_ITEMS.filter((i) => i.popular).slice(0, 4);
-  }, []);
+    return menuItems.filter((i) => i.popular).slice(0, 4);
+  }, [menuItems]);
 
   if (!isSearchOpen) return null;
 
@@ -312,6 +313,7 @@ export function SearchModal() {
 
                   <div className="divide-y divide-brand-beige-dark/50 rounded-xl border border-brand-beige-dark bg-white overflow-hidden shadow-2xs">
                     {matchingItems.map((item, idx) => {
+                      const isAvailable = item.isAvailable !== false;
                       const qty = getItemQuantityInCart(item.id);
                       const cartItem = cart.find((ci) => ci.menuItemId === item.id);
                       const hasOptions =
@@ -322,7 +324,11 @@ export function SearchModal() {
                         <div
                           key={item.id}
                           style={{ animationDelay: `${Math.min(idx * 35, 250)}ms` }}
-                          className="p-3 flex items-center justify-between gap-3 hover:bg-brand-beige-light/60 transition-colors animate-in fade-in slide-in-from-bottom-1 duration-200 fill-mode-both"
+                          className={`p-3 flex items-center justify-between gap-3 transition-colors animate-in fade-in slide-in-from-bottom-1 duration-200 fill-mode-both ${
+                            isAvailable
+                              ? 'hover:bg-brand-beige-light/60'
+                              : 'bg-gray-50/70 opacity-75'
+                          }`}
                         >
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5 flex-wrap">
@@ -333,11 +339,15 @@ export function SearchModal() {
                               <h4 className="font-extrabold text-xs sm:text-sm text-brand-green truncate">
                                 {item.name}
                               </h4>
-                              {item.popular && (
+                              {!isAvailable ? (
+                                <span className="text-[9px] uppercase font-black px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-0.5 shrink-0">
+                                  Sold Out
+                                </span>
+                              ) : item.popular ? (
                                 <span className="text-[9px] uppercase font-black px-1.5 py-0.2 rounded-full bg-brand-gold/20 text-brand-gold flex items-center gap-0.5 shrink-0">
                                   <Sparkles className="w-2.5 h-2.5" /> Popular
                                 </span>
-                              )}
+                              ) : null}
                             </div>
                             {item.description && (
                               <p className="text-[11px] text-brand-green/60 line-clamp-1 mt-0.5">
@@ -356,7 +366,11 @@ export function SearchModal() {
 
                           {/* Quick Add or Quantity controls right in search */}
                           <div className="shrink-0">
-                            {qty > 0 ? (
+                            {!isAvailable ? (
+                              <span className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-400 font-bold text-[11px] border border-gray-200 select-none">
+                                Unavailable
+                              </span>
+                            ) : qty > 0 ? (
                               <div className="flex items-center gap-1 bg-brand-green text-brand-beige px-2 py-1 rounded-full shadow-2xs">
                                 <button
                                   type="button"
@@ -493,7 +507,7 @@ export function SearchModal() {
                     Explore Quick Sections
                   </p>
                   <div className="flex flex-wrap gap-1.5">
-                    {MENU_CATEGORIES.filter((c) => c.id !== 'all')
+                    {categories.filter((c) => c.id !== 'all')
                       .slice(0, 8)
                       .map((cat) => (
                         <button
