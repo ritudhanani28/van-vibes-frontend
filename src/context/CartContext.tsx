@@ -231,7 +231,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     const connectWs = () => {
       try {
-        const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://127.0.0.1:8000/api/v1/ws/orders';
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsHost = window.location.hostname || '127.0.0.1';
+        const wsUrl = process.env.NEXT_PUBLIC_WS_URL || `${wsProtocol}//${wsHost}:8000/api/v1/ws/orders`;
         socket = new WebSocket(wsUrl);
 
         socket.onmessage = (event) => {
