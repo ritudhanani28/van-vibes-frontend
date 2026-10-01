@@ -1,5 +1,3 @@
-import { envConfig } from '@/config/env';
-
 /**
  * Resilient Backend API Client with Multi-Target Failover & In-Memory Route Caching.
  * Automatically resolves and connects across Docker bridge networks, remote VPS, and local environments.
