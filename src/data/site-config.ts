@@ -1,4 +1,5 @@
 import type { HubLocation, NavGroup, NavLink } from '@/types/site';
+import { getCustomerFrontendBaseUrl } from '@/lib/qr-url';
 
 export const SiteConfig = {
   name: process.env.NEXT_PUBLIC_APP_NAME || 'Vaan Vibes Cafe & Restro',
@@ -8,17 +9,19 @@ export const SiteConfig = {
   description:
     process.env.NEXT_PUBLIC_APP_DESCRIPTION ||
     'A vibrant restro and cafe serving artisanal coffee, gourmet continental & indian cuisine, refreshing drinks, and memorable moments in a warm, aesthetic atmosphere.',
-  url: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:4000',
+  get url(): string {
+    return getCustomerFrontendBaseUrl();
+  },
   address: 'Main Promenade, Serenita Arts Quarter, Surat, Gujarat',
   phone: '+91 98765 43210',
   gstin: '24AAAAA0000A1Z5',
   email: {
-    contact: process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'hello@vaanvibes.cafe',
-    careers: process.env.NEXT_PUBLIC_CAREERS_EMAIL || 'careers@vaanvibes.cafe',
-    security: process.env.NEXT_PUBLIC_SECURITY_EMAIL || 'admin@vaanvibes.cafe',
+    contact: 'hello@vaanvibes.cafe',
+    careers: 'careers@vaanvibes.cafe',
+    security: 'admin@vaanvibes.cafe',
   },
   socials: {
-    github: 'https://github.com',
+    github: 'https://github.com/PATELPRATHAM007',
     twitter: 'https://x.com',
     linkedin: 'https://linkedin.com',
     discord: 'https://discord.com',

@@ -13,6 +13,7 @@ import { SearchModal } from '@/components/SearchModal';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
 import { AlertTriangle, ArrowRight, ShieldCheck, Search } from 'lucide-react';
 import Link from 'next/link';
+import { buildCustomerMenuUrl } from '@/lib/qr-url';
 
 export function MenuClient({ defaultCafeId }: { defaultCafeId?: string } = {}) {
   void defaultCafeId;
@@ -114,7 +115,7 @@ export function MenuClient({ defaultCafeId }: { defaultCafeId?: string } = {}) {
             tableNumber: tableNum,
             name: `Table ${pad}`,
             token: tokenQuery,
-            qrCodeUrl: `/cafe/van-vibes/menu?table=T${pad}&token=${tokenQuery}`,
+            qrCodeUrl: buildCustomerMenuUrl({ tableId: `T${pad}`, token: tokenQuery }),
             capacity: 2,
             status: 'AVAILABLE',
           });
@@ -129,7 +130,7 @@ export function MenuClient({ defaultCafeId }: { defaultCafeId?: string } = {}) {
             tableNumber: tableNum,
             name: `Table ${pad}`,
             token: tokenQuery,
-            qrCodeUrl: `/cafe/van-vibes/menu?table=T${pad}&token=${tokenQuery}`,
+            qrCodeUrl: buildCustomerMenuUrl({ tableId: `T${pad}`, token: tokenQuery }),
             capacity: 2,
             status: 'AVAILABLE',
           });

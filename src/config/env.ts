@@ -2,6 +2,7 @@
  * Centralized Environment Configuration for Van Vibes Customer Frontend
  * Single Source of Truth for API, WebSocket, Backend URLs, and Port Settings.
  */
+import { getCustomerFrontendBaseUrl } from '@/lib/qr-url';
 
 export const envConfig = {
   // Application Port (Production: 4000)
@@ -86,13 +87,6 @@ export const envConfig = {
    * Resolves public customer app URL for metadata, SEO, and share links.
    */
   getPublicAppUrl(): string {
-    if (typeof window !== 'undefined') {
-      return window.location.origin;
-    }
-    const envUrl = process.env.NEXT_PUBLIC_APP_URL;
-    if (envUrl && envUrl.trim()) {
-      return envUrl.trim().replace(/\/+$/, '');
-    }
-    return 'http://localhost:4000';
+    return getCustomerFrontendBaseUrl();
   },
 };

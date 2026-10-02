@@ -1,5 +1,6 @@
 import { BillData, CafeDetails, CartItem, Order, OrderStatus, PaymentStatus, TableInfo } from '@/types/cafe';
 import { MENU_ITEMS } from '@/data/vaan-vibes-menu';
+import { buildCustomerMenuUrl } from './qr-url';
 
 export const CAFE_INFO: CafeDetails = {
   id: 'van-vibes',
@@ -25,7 +26,7 @@ const INITIAL_TABLES: TableInfo[] = Array.from({ length: 12 }, (_, i) => {
     tableNumber: num,
     name: `Table ${pad}`,
     token,
-    qrCodeUrl: `/cafe/van-vibes/menu?table=${id}&token=${token}`,
+    qrCodeUrl: buildCustomerMenuUrl({ tableId: id, token }),
     capacity: num <= 4 ? 2 : num <= 8 ? 4 : 6,
     status: num === 3 || num === 7 ? 'OCCUPIED' : 'AVAILABLE',
   };

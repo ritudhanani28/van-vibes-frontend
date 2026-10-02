@@ -83,16 +83,9 @@ You only need to edit **`.env.example`** or **`.env.local`**. The entire applica
 | `NEXT_PUBLIC_APP_NAME` | Project / Company Name | `"Cosmos Nexus Innovations"` |
 | `NEXT_PUBLIC_APP_TAGLINE` | Short brand slogan / subtitle | `"Next-Generation Digital Systems"` |
 | `NEXT_PUBLIC_APP_DESCRIPTION` | Meta description & summary | `"Architecting mission-critical digital systems..."` |
-| `NEXT_PUBLIC_APP_URL` | Canonical application URL | `"http://localhost:3000"` |
-| `NEXT_PUBLIC_CONTACT_EMAIL` | General inquiry email | `"contact@cosmosnexusinnovations.com"` |
-| `NEXT_PUBLIC_CAREERS_EMAIL` | Recruitment email | `"careers@cosmosnexusinnovations.com"` |
-| `NEXT_PUBLIC_SECURITY_EMAIL` | Vulnerability disclosure email | `"security@cosmosnexusinnovations.com"` |
-| `NEXT_PUBLIC_GITHUB_URL` | Organization GitHub link | `"https://github.com/PATELPRATHAM007"` |
-| `NEXT_PUBLIC_TWITTER_URL` | X / Twitter profile URL | `"https://x.com"` |
-| `NEXT_PUBLIC_LINKEDIN_URL` | LinkedIn company profile | `"https://linkedin.com"` |
-| `NEXT_PUBLIC_DISCORD_URL` | Discord community invite | `"https://discord.com"` |
-| `NEXT_PUBLIC_API_URL` | Backend REST / GraphQL API | `"http://localhost:8000/api/v1"` |
-| `PORT` | Local and production port | `3000` |
+| `NEXT_PUBLIC_APP_URL` | Canonical application URL | `"http://localhost:4000"` |
+| `NEXT_PUBLIC_API_URL` | Backend REST / GraphQL API | `"http://localhost:9000/api/v1"` |
+| `PORT` | Local and production port | `4000` |
 
 ---
 
