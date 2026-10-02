@@ -73,11 +73,7 @@ export function FoodCard({ item, index = 0 }: Props) {
             <span className="w-4 h-4 rounded border border-emerald-600 p-0.5 flex items-center justify-center bg-emerald-50 shrink-0">
               <span className="w-2 h-2 rounded-full bg-emerald-600" />
             </span>
-            {!isAvailable ? (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 text-[10px] font-black uppercase tracking-wider whitespace-nowrap">
-                Sold Out
-              </span>
-            ) : item.popular ? (
+            {item.popular ? (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand-gold/15 text-brand-gold text-[10px] font-black uppercase tracking-wider whitespace-nowrap">
                 <Sparkles className="w-2.5 h-2.5" /> Popular
               </span>

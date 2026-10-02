@@ -339,11 +339,7 @@ export function SearchModal() {
                               <h4 className="font-extrabold text-xs sm:text-sm text-brand-green truncate">
                                 {item.name}
                               </h4>
-                              {!isAvailable ? (
-                                <span className="text-[9px] uppercase font-black px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-0.5 shrink-0">
-                                  Sold Out
-                                </span>
-                              ) : item.popular ? (
+                              {item.popular ? (
                                 <span className="text-[9px] uppercase font-black px-1.5 py-0.2 rounded-full bg-brand-gold/20 text-brand-gold flex items-center gap-0.5 shrink-0">
                                   <Sparkles className="w-2.5 h-2.5" /> Popular
                                 </span>
