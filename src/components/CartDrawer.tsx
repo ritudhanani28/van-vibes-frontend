@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import { X, Plus, Minus, Trash2, ArrowRight, ShoppingBag, UtensilsCrossed } from 'lucide-react';
-import { ConfirmationModal } from './ConfirmationModal';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 
 export function CartDrawer() {
   const {

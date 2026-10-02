@@ -5,7 +5,7 @@ import { MenuItem } from '@/types/cafe';
 import { useCart } from '@/context/CartContext';
 import { Plus, Minus, Sparkles, SlidersHorizontal } from 'lucide-react';
 import { ItemCustomizationModal } from './ItemCustomizationModal';
-import { ScrollReveal } from './ScrollReveal';
+import { ScrollReveal } from '@/components/ui/ScrollReveal';
 
 interface Props {
   item: MenuItem;

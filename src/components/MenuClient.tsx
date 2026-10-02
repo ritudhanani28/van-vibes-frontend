@@ -3,14 +3,14 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
-import { CafeHeader } from '@/components/CafeHeader';
+import { CafeHeader } from '@/components/layout/CafeHeader';
 import { CategoryNav } from '@/components/CategoryNav';
 import { FoodCard } from '@/components/FoodCard';
 import { CartDrawer } from '@/components/CartDrawer';
 import { OrderConfirmationModal } from '@/components/OrderConfirmationModal';
 import { OrderTrackingModal } from '@/components/OrderTrackingModal';
 import { SearchModal } from '@/components/SearchModal';
-import { ScrollReveal } from '@/components/ScrollReveal';
+import { ScrollReveal } from '@/components/ui/ScrollReveal';
 import { AlertTriangle, ArrowRight, ShieldCheck, Search } from 'lucide-react';
 import Link from 'next/link';
 

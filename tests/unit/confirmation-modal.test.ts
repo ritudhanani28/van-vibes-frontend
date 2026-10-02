@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ConfirmationModalProps } from '../../src/components/ConfirmationModal';
+import { ConfirmationModalProps } from '../../src/components/ui/ConfirmationModal';
 
 describe('Confirmation and Cart Control Architecture', () => {
   it('ConfirmationModalProps interface contract supports title, description, actions, and destructive state', () => {

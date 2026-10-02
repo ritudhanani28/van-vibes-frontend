@@ -18,7 +18,7 @@ function getReducedMotionServerSnapshot() {
   return false;
 }
 
-interface ScrollRevealProps extends React.HTMLAttributes<HTMLElement> {
+export interface ScrollRevealProps extends React.HTMLAttributes<HTMLElement> {
   children: React.ReactNode;
   className?: string;
   direction?: 'up' | 'down' | 'left' | 'right' | 'none';
