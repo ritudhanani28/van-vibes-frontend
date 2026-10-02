@@ -7,38 +7,23 @@ let cachedWorkingBackendUrl: string | null = null;
 
 function getCandidateUrls(): string[] {
   const envUrl = process.env.FASTAPI_BACKEND_URL?.trim() || '';
-  const isProd = process.env.NODE_ENV === 'production';
-
-  // Explicit remote backend config takes absolute priority
-  const explicitRemote =
-    envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1') ? envUrl : null;
 
   const candidates: string[] = [];
 
-  if (explicitRemote) {
-    candidates.push(explicitRemote);
+  // 1. Explicit FASTAPI_BACKEND_URL takes priority if configured
+  if (envUrl) {
+    candidates.push(envUrl);
   }
 
-  if (isProd) {
-    // In production / Docker containers, loopback (127.0.0.1) points to container itself,
-    // so container services and VPS IP must be tried first.
-    candidates.push(
-      'http://backend:9000',
-      'http://van_vibes_backend:9000',
-      'http://84.247.143.242:9000',
-      'http://host.docker.internal:9000',
-      'http://127.0.0.1:9000',
-      'http://localhost:9000'
-    );
-  } else {
-    // In local development, check local loopback first
-    candidates.push(
-      envUrl || 'http://127.0.0.1:9000',
-      'http://localhost:9000',
-      'http://backend:9000',
-      'http://84.247.143.242:9000'
-    );
-  }
+  // 2. Local development loopback (Port 9000)
+  candidates.push('http://127.0.0.1:9000', 'http://localhost:9000');
+
+  // 3. Containerized service discovery (Docker networks)
+  candidates.push(
+    'http://backend:9000',
+    'http://van_vibes_backend:9000',
+    'http://host.docker.internal:9000'
+  );
 
   // Deduplicate and strip trailing slashes
   return Array.from(new Set(candidates.filter(Boolean).map((u) => u.trim().replace(/\/+$/, ''))));
