@@ -60,6 +60,7 @@ html {
   -webkit-text-size-adjust: 100%;
   background-color: #FAF5EC;
   color: #18312B;
+  touch-action: manipulation;
 }
 
 body {
@@ -71,6 +72,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: #FAF5EC;
   color: #18312B;
+  touch-action: manipulation;
 }
 
 /* Custom Scrollbar */

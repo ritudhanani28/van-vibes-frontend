@@ -4,13 +4,24 @@ import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { useCart } from '@/context/CartContext';
 import { Search, X, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 
-export function CategoryNav() {
+export function CategoryNav({ className = "" }: { className?: string } = {}) {
   const { activeCategory, setActiveCategory, searchQuery, setSearchQuery, setIsSearchOpen, menuItems, categories } = useCart();
   const scrollRef = useRef<HTMLDivElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const [isFocused, setIsFocused] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+
+  // Automatically scroll active category pill into center of view
+  useEffect(() => {
+    if (!scrollRef.current) return;
+    const activeEl = scrollRef.current.querySelector(
+      '[data-category-slug="' + activeCategory + '"]'
+    );
+    if (activeEl) {
+      activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  }, [activeCategory]);
 
   const checkScroll = () => {
     if (scrollRef.current) {
@@ -81,6 +92,7 @@ export function CategoryNav() {
     setActiveCategory(slug);
     setSearchQuery('');
     setIsFocused(false);
+    window.scrollTo({ top: 0, behavior: 'instant' });
 
     // Smoothly scroll category pill into center
     const pill = document.querySelector(`[data-category-slug="${slug}"]`);
@@ -103,7 +115,7 @@ export function CategoryNav() {
   };
 
   return (
-    <div className="sticky top-[52px] sm:top-[57px] z-30 bg-brand-beige-light/95 backdrop-blur-md border-b border-brand-beige-muted/60 py-2.5 sm:py-3 px-3 sm:px-4 shadow-sm transition-all">
+    <div className={`w-full bg-brand-beige-light/95 backdrop-blur-md border-b border-brand-beige-muted/60 py-2 sm:py-2.5 px-3 sm:px-4 transition-all ${className}`}>
       <div className="max-w-6xl mx-auto space-y-2 sm:space-y-2.5">
         {/* Search Bar with Interactive Food Section Suggestions & Arrow Button */}
         <div ref={searchContainerRef} className="relative w-full">
@@ -135,7 +147,7 @@ export function CategoryNav() {
                 }}
                 placeholder="Search coffee, pizza, pasta, toasties, shakes..."
                 aria-label="Search coffee, drinks and dishes"
-                className="w-full pl-9 sm:pl-10 pr-9 py-2 sm:py-2.5 rounded-xl bg-white border border-brand-beige-dark text-brand-green placeholder:text-brand-green/40 placeholder:truncate text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-green focus:border-brand-green shadow-xs transition-all min-h-[40px] cursor-pointer"
+                className="w-full pl-9 sm:pl-10 pr-9 py-2 sm:py-2.5 rounded-xl bg-white border border-brand-beige-dark text-brand-green placeholder:text-brand-green/40 placeholder:truncate text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-green focus:border-brand-green shadow-xs transition-all min-h-[40px] cursor-pointer"
               />
               {searchQuery && (
                 <button
@@ -234,8 +246,12 @@ export function CategoryNav() {
                   key={cat.id}
                   data-category-slug={cat.slug}
                   onClick={() => {
-                    setActiveCategory(cat.slug);
-                    if (searchQuery) setSearchQuery('');
+                    if (activeCategory === cat.slug) {
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    } else {
+                      setActiveCategory(cat.slug);
+                      if (searchQuery) setSearchQuery('');
+                    }
                   }}
                   className={`flex items-center gap-1 sm:gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap transition-all select-none shadow-xs shrink-0 ${
                     isActive

@@ -160,11 +160,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const data = await res.json();
       if (data.orders) {
         const orders: Order[] = data.orders;
-        const active = orders.filter(
-          (o) => !['COMPLETED', 'CANCELLED'].includes(o.status) && !o.billGenerated && o.sessionStatus !== 'BILL_GENERATED'
+        const unbilledOrders = orders.filter(
+          (o) => !o.billGenerated && o.sessionStatus !== 'BILL_GENERATED' && o.sessionStatus !== 'CLOSED'
         );
-        const previous = orders.filter(
-          (o) => ['COMPLETED', 'CANCELLED'].includes(o.status) || o.billGenerated || o.sessionStatus === 'BILL_GENERATED'
+        const active = unbilledOrders.filter(
+          (o) => !['COMPLETED', 'CANCELLED'].includes(o.status)
+        );
+        const previous = unbilledOrders.filter(
+          (o) => ['COMPLETED', 'CANCELLED'].includes(o.status)
         );
         setActiveOrders(active);
         setPreviousOrders(previous);
@@ -232,7 +235,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     const connectWs = () => {
       try {
-        const wsUrl = envConfig.getWebSocketUrl();
+        const tableQuery = table?.id ? `?table_id=${encodeURIComponent(table.id)}` : '';
+        const wsUrl = `${envConfig.getWebSocketUrl()}${tableQuery}`;
         socket = new WebSocket(wsUrl);
 
         socket.onmessage = (event) => {
@@ -259,6 +263,27 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
               const itemId = parsed.data?.itemId || parsed.data?.id;
               if (itemId) {
                 setMenuItems((prev) => prev.filter((item) => item.id !== itemId));
+              }
+            } else if (
+              parsed.event === 'BILL_GENERATED' ||
+              parsed.event === 'PAYMENT_SETTLED' ||
+              (parsed.event === 'TABLE_STATUS_UPDATED' && parsed.data?.status === 'AVAILABLE')
+            ) {
+              const eventTableId = parsed.data?.tableId || parsed.tableId;
+              if (!eventTableId || !table?.id || eventTableId === table.id) {
+                // Real-time bill generation event: immediately clear all active and previous orders
+                setActiveOrders([]);
+                setPreviousOrders([]);
+                fetchOrders();
+              }
+            } else if (
+              parsed.event === 'ORDER_STATUS_UPDATED' ||
+              parsed.event === 'ORDER_PLACED' ||
+              parsed.event === 'TABLE_STATUS_UPDATED'
+            ) {
+              const eventTableId = parsed.data?.tableId || parsed.tableId;
+              if (!eventTableId || !table?.id || eventTableId === table.id) {
+                fetchOrders();
               }
             }
           } catch {
@@ -289,7 +314,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (reconnectTimeout) clearTimeout(reconnectTimeout);
       if (socket) socket.close();
     };
-  }, []);
+  }, [table?.id, fetchOrders]);
 
   const addItem = useCallback(
     (

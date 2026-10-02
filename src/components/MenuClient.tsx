@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { CafeHeader } from '@/components/layout/CafeHeader';
@@ -148,6 +148,15 @@ export function MenuClient({ defaultCafeId }: { defaultCafeId?: string } = {}) {
     };
   }, [tableParam, tokenParam, setTable]);
 
+  // Scroll to top whenever category changes so items always start from the top, never in the middle
+  const prevCategoryRef = useRef(activeCategory);
+  useEffect(() => {
+    if (prevCategoryRef.current !== activeCategory) {
+      prevCategoryRef.current = activeCategory;
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, [activeCategory]);
+
   // Filter items based on Category & Search Query
   const filteredItems = useMemo(() => {
     let items = menuItems;
@@ -211,13 +220,16 @@ export function MenuClient({ defaultCafeId }: { defaultCafeId?: string } = {}) {
 
   return (
     <div className="min-h-screen bg-brand-beige-light flex flex-col font-sans pb-24">
-      {/* Header with Table Indicator */}
-      <CafeHeader />
+      {/* Unified Sticky Top Header & Category Navigation Bar */}
+      <div className="sticky top-0 z-40 w-full bg-brand-beige-light shadow-sm">
+        <CafeHeader />
+        <CategoryNav />
+      </div>
 
       {/* QR Validation Error Alert */}
       {validationError && (
-        <div className="max-w-6xl mx-auto px-4 mt-3 w-full">
-          <div className="p-4 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 mt-3 w-full">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
             <div className="flex items-center gap-2.5">
               <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
               <div>
@@ -236,9 +248,6 @@ export function MenuClient({ defaultCafeId }: { defaultCafeId?: string } = {}) {
           </div>
         </div>
       )}
-
-      {/* Category Navigation & Search */}
-      <CategoryNav />
 
       {/* Main Content Area */}
       <main className="max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4 flex-1 w-full space-y-4 sm:space-y-6">
