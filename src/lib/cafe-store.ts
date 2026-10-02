@@ -192,13 +192,13 @@ export const CafeStore = {
     if (!table) return [];
     if (sessionToken) {
       return store.orders
-        .filter((o) => o.tableId === table.id && o.sessionToken === sessionToken)
+        .filter((o) => o.tableId === table.id && o.sessionToken === sessionToken && o.paymentStatus !== 'PAID')
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
-    const newest = store.orders.find((o) => o.tableId === table.id);
+    const newest = store.orders.find((o) => o.tableId === table.id && o.paymentStatus !== 'PAID');
     if (!newest) return [];
     return store.orders
-      .filter((o) => o.tableId === table.id && o.sessionToken === newest.sessionToken)
+      .filter((o) => o.tableId === table.id && o.sessionToken === newest.sessionToken && o.paymentStatus !== 'PAID')
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   },
 

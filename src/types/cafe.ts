@@ -109,7 +109,9 @@ export interface Order {
   total: number;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
+  payment_status?: string;
   sessionStatus?: SessionStatus;
+  session_status?: string;
   billGenerated?: boolean;
   createdAt: string;
   updatedAt: string;

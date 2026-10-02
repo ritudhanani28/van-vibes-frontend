@@ -53,6 +53,16 @@ export function OrderTrackingModal() {
 
   const [activeTab, setActiveTab] = useState<'active' | 'previous'>('active');
 
+  // Once an order is paid or session is closed, never display it in active or previous orders
+  const isOrderPaid = (o: Order) =>
+    o.paymentStatus === 'PAID' ||
+    o.payment_status === 'PAID' ||
+    o.sessionStatus === 'CLOSED' ||
+    o.session_status === 'CLOSED';
+
+  const visibleActiveOrders = activeOrders.filter((o) => !isOrderPaid(o));
+  const visiblePreviousOrders = previousOrders.filter((o) => !isOrderPaid(o));
+
   // Cancel Confirmation Popup State
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
@@ -171,9 +181,9 @@ export function OrderTrackingModal() {
               }`}
             >
               <span>Active Orders</span>
-              {activeOrders.length > 0 && (
+              {visibleActiveOrders.length > 0 && (
                 <span className="w-5 h-5 rounded-full bg-brand-green text-brand-beige text-[11px] flex items-center justify-center font-bold">
-                  {activeOrders.length}
+                  {visibleActiveOrders.length}
                 </span>
               )}
             </button>
@@ -186,9 +196,9 @@ export function OrderTrackingModal() {
               }`}
             >
               <span>Previous Orders</span>
-              {previousOrders.length > 0 && (
+              {visiblePreviousOrders.length > 0 && (
                 <span className="w-5 h-5 rounded-full bg-brand-beige-dark text-brand-green text-[11px] flex items-center justify-center font-bold">
-                  {previousOrders.length}
+                  {visiblePreviousOrders.length}
                 </span>
               )}
             </button>
@@ -197,7 +207,7 @@ export function OrderTrackingModal() {
           {/* Content Area */}
           <div className="flex-1 overflow-y-auto p-3.5 sm:p-5 space-y-3.5 sm:space-y-4">
             {activeTab === 'active' ? (
-              activeOrders.length === 0 ? (
+              visibleActiveOrders.length === 0 ? (
                 <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
                   <div className="w-14 h-14 rounded-full bg-brand-beige flex items-center justify-center text-brand-green/50">
                     <Utensils className="w-7 h-7" />
@@ -215,7 +225,7 @@ export function OrderTrackingModal() {
                 </div>
               ) : (
                 <div className="space-y-3 sm:space-y-4">
-                  {activeOrders.map((order) => (
+                  {visibleActiveOrders.map((order) => (
                     <OrderCard
                       key={order.id}
                       order={order}
@@ -224,13 +234,13 @@ export function OrderTrackingModal() {
                   ))}
                 </div>
               )
-            ) : previousOrders.length === 0 ? (
+            ) : visiblePreviousOrders.length === 0 ? (
               <div className="py-12 text-center text-xs text-brand-green/60">
                 No past orders recorded for this session.
               </div>
             ) : (
               <div className="space-y-3 sm:space-y-4">
-                {previousOrders.map((order) => (
+                {visiblePreviousOrders.map((order) => (
                   <OrderCard
                     key={order.id}
                     order={order}

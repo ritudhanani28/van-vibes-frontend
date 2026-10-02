@@ -23,7 +23,13 @@ export async function GET(request: NextRequest) {
 
     const res = await fetchFromBackend(endpoint);
     if (res.ok) {
-      const orders = await res.json();
+      let orders = await res.json();
+      if (!all && Array.isArray(orders)) {
+        orders = orders.filter(
+          (o: { paymentStatus?: string; payment_status?: string; sessionStatus?: string }) =>
+            o.paymentStatus !== 'PAID' && o.payment_status !== 'PAID' && o.sessionStatus !== 'CLOSED'
+        );
+      }
       return NextResponse.json({ orders });
     }
   } catch {
