@@ -159,5 +159,16 @@ export interface BillData {
   total: number;
   paymentStatus: PaymentStatus;
   createdAt: string;
+  hasIncompleteOrders?: boolean;
+  incompleteOrders?: Array<{
+    order_id?: string;
+    orderId?: string;
+    order_number?: string;
+    orderNumber?: string;
+    table_number?: number;
+    tableNumber?: number;
+    status: string;
+    items?: Array<{ name: string; quantity: number }>;
+  }>;
 }
 
