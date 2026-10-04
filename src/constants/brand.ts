@@ -17,16 +17,16 @@ export interface CafeBrandMeta {
 }
 
 export const CafeBrand: CafeBrandMeta = {
-  id: 'van-vibes',
-  name: 'Vaan Vibes Cafe & Restro',
-  hindiName: 'वन VIBES',
-  tagline: 'Cafe & Restro • Taste the Vibe',
-  address: 'Main Promenade, Serenita Arts Quarter, Surat, Gujarat - 395007',
-  phone: '+91 98765 43210',
-  email: 'hello@vaanvibes.cafe',
-  gstin: '24AAAAA0000A1Z5',
-  currency: '₹',
-  operatingHours: '10:00 AM - 11:30 PM',
+  id: process.env.NEXT_PUBLIC_CAFE_ID || 'van-vibes',
+  name: process.env.NEXT_PUBLIC_APP_NAME || '',
+  hindiName: process.env.NEXT_PUBLIC_CAFE_HINDI_NAME || '',
+  tagline: process.env.NEXT_PUBLIC_APP_TAGLINE || '',
+  address: process.env.NEXT_PUBLIC_CAFE_ADDRESS || '',
+  phone: process.env.NEXT_PUBLIC_CAFE_PHONE || '',
+  email: process.env.NEXT_PUBLIC_CAFE_EMAIL || '',
+  gstin: process.env.NEXT_PUBLIC_CAFE_GSTIN || '',
+  currency: process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹',
+  operatingHours: process.env.NEXT_PUBLIC_CAFE_HOURS || '',
 };
 
 export interface NavLink {

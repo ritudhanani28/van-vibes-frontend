@@ -1,6 +1,6 @@
 #!/bin/sh
 # ==============================================================================
-# Cosmos Nexus Innovations — Git Pre-Commit Hook
+# Vaan Vibes Cafe & Restro — Git Pre-Commit Hook
 # 1. Blocks accidental commits of secret/environment files (.env, .env.local, etc.)
 # 2. Runs strict TypeScript check (pnpm typecheck)
 # 3. Runs ESLint verification (pnpm lint)

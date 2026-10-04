@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 // ==============================================================================
-// Cosmos Nexus Innovations Frontend — High-Concurrency Multi-Core Cluster Runner
+// Vaan Vibes Cafe & Restro Frontend — High-Concurrency Multi-Core Cluster Runner
 // Forks multiple Node.js worker processes across CPU cores for maximum throughput
 // ==============================================================================
 

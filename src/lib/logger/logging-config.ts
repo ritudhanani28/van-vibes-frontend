@@ -8,7 +8,7 @@ export interface LogContext {
 }
 
 export const NO_CONTEXT = '-';
-export const LOGGER_NAMESPACE = process.env.LOGGER_NAMESPACE || 'cosmosnexus';
+export const LOGGER_NAMESPACE = process.env.LOGGER_NAMESPACE || 'vaanvibes';
 
 // Node.js AsyncLocalStorage for request-scoped context propagation
 const asyncLocalStorage = new AsyncLocalStorage<LogContext>();

@@ -1,4 +1,4 @@
-name: Frontend CI/CD — Cosmos Nexus Innovations
+name: Frontend CI/CD — Van Vibes Cafe & Restro
 
 on:
   push:
@@ -52,9 +52,9 @@ jobs:
         env:
           NEXT_TELEMETRY_DISABLED: 1
           NODE_ENV: production
-          NEXT_PUBLIC_APP_NAME: "Cosmos Nexus Innovations"
-          NEXT_PUBLIC_APP_URL: "https://cosmosnexusinnovations.com"
-          NEXT_PUBLIC_API_URL: "https://api.cosmosnexusinnovations.com/api/v1"
+          NEXT_PUBLIC_APP_NAME: "Van Vibes Cafe & Restro"
+          NEXT_PUBLIC_APP_URL: "https://vaanvibes.cafe"
+          NEXT_PUBLIC_API_URL: "https://api.vaanvibes.cafe/api/v1"
 
   # ----------------------------------------------------------------------------
   # Stage 2: Container Image Build & Health Verification
@@ -77,9 +77,9 @@ jobs:
           context: .
           file: ./Dockerfile
           push: false
-          tags: cosmosnexus-frontend:test
+          tags: van-vibes-frontend:test
           build-args: |
-            NEXT_PUBLIC_APP_NAME=Cosmos Nexus Innovations
+            NEXT_PUBLIC_APP_NAME=Van Vibes Cafe & Restro
             NEXT_PUBLIC_APP_URL=http://localhost:3000
 
   # ----------------------------------------------------------------------------
@@ -110,7 +110,7 @@ jobs:
           PROD_USERNAME: ${{ secrets.PROD_USERNAME || 'root' }}
           PROD_SSH_KEY: ${{ secrets.PROD_SSH_KEY }}
           PROD_PORT: ${{ secrets.PROD_SSH_PORT || 22 }}
-          DEPLOY_PATH: ${{ secrets.PROD_DEPLOY_PATH || '/var/www/cosmosnexusinnovations-frontend' }}
+          DEPLOY_PATH: ${{ secrets.PROD_DEPLOY_PATH || '/var/www/van-vibes-frontend' }}
         with:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USERNAME || 'root' }}
@@ -120,14 +120,14 @@ jobs:
           envs: DEPLOY_PATH
           script: |
             echo "================================================================================"
-            echo "   DEPLOYING COSMOS NEXUS INNOVATIONS FRONTEND (Next.js 16 Production)          "
+            echo "   DEPLOYING VAAN VIBES CAFE & RESTRO FRONTEND (Next.js 16 Production)          "
             echo "================================================================================"
 
             # Ensure deployment directory exists
             if [ ! -d "$DEPLOY_PATH" ]; then
               echo "Initializing deployment directory at $DEPLOY_PATH..."
               mkdir -p "$DEPLOY_PATH"
-              git clone git@github.com:PATELPRATHAM007/cosmosnexusinnovations-frontend.git "$DEPLOY_PATH"
+              git clone "https://github.com/${{ github.repository }}.git" "$DEPLOY_PATH"
             fi
 
             cd "$DEPLOY_PATH"

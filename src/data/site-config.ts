@@ -1,90 +1,44 @@
-import type { HubLocation, NavGroup, NavLink } from '@/types/site';
 import { getCustomerFrontendBaseUrl } from '@/lib/qr-url';
 
+const parsedCuisines = process.env.NEXT_PUBLIC_CAFE_CUISINES
+  ? process.env.NEXT_PUBLIC_CAFE_CUISINES.split(',').map((c) => c.trim()).filter(Boolean)
+  : [];
+
+const morningHours = process.env.NEXT_PUBLIC_CAFE_MORNING_HOURS || '';
+const breakHours = process.env.NEXT_PUBLIC_CAFE_BREAK_HOURS || '';
+const eveningHours = process.env.NEXT_PUBLIC_CAFE_EVENING_HOURS || '';
+const defaultHoursSummary = [morningHours, eveningHours].filter(Boolean).join(', ');
+const cafeHours = process.env.NEXT_PUBLIC_CAFE_HOURS || defaultHoursSummary;
+
 export const SiteConfig = {
-  name: process.env.NEXT_PUBLIC_APP_NAME || 'Vaan Vibes Cafe & Restro',
-  hindiName: 'वन VIBES',
-  tagline: process.env.NEXT_PUBLIC_APP_TAGLINE || 'Cafe & Restro • Taste the Vibe',
-  title: 'Vaan Vibes Cafe & Restro — Digital QR Menu & Ordering',
-  description:
-    process.env.NEXT_PUBLIC_APP_DESCRIPTION ||
-    'A vibrant restro and cafe serving artisanal coffee, gourmet continental & indian cuisine, refreshing drinks, and memorable moments in a warm, aesthetic atmosphere.',
+  name: process.env.NEXT_PUBLIC_APP_NAME || '',
+  hindiName: process.env.NEXT_PUBLIC_CAFE_HINDI_NAME || '',
+  tagline: process.env.NEXT_PUBLIC_APP_TAGLINE || '',
+  title: process.env.NEXT_PUBLIC_APP_TITLE || process.env.NEXT_PUBLIC_APP_NAME || '',
+  description: process.env.NEXT_PUBLIC_APP_DESCRIPTION || '',
   get url(): string {
     return getCustomerFrontendBaseUrl();
   },
-  address: 'Main Promenade, Serenita Arts Quarter, Surat, Gujarat',
-  phone: '+91 98765 43210',
-  gstin: '24AAAAA0000A1Z5',
+  address: process.env.NEXT_PUBLIC_CAFE_ADDRESS || '',
+  phone: process.env.NEXT_PUBLIC_CAFE_PHONE || '',
+  gstin: process.env.NEXT_PUBLIC_CAFE_GSTIN || '',
   email: {
-    contact: 'hello@vaanvibes.cafe',
-    careers: 'careers@vaanvibes.cafe',
-    security: 'admin@vaanvibes.cafe',
+    contact: process.env.NEXT_PUBLIC_CAFE_EMAIL || '',
+    orders: process.env.NEXT_PUBLIC_CAFE_ORDERS_EMAIL || '',
   },
-  socials: {
-    github: 'https://github.com/PATELPRATHAM007',
-    twitter: 'https://x.com',
-    linkedin: 'https://linkedin.com',
-    discord: 'https://discord.com',
+  operatingHours: cafeHours,
+  openingHours: cafeHours,
+  schedule: {
+    morning: morningHours,
+    break: breakHours,
+    evening: eveningHours,
+    display: [
+      morningHours ? `Morning: ${morningHours}` : '',
+      breakHours ? `Break: ${breakHours}` : '',
+      eveningHours ? `Evening: ${eveningHours}` : '',
+    ]
+      .filter(Boolean)
+      .join(' • '),
   },
+  cuisine: parsedCuisines,
 };
-
-export const GlobalHubs: HubLocation[] = [
-  {
-    city: 'Surat',
-    country: 'India',
-    flag: '🇮🇳',
-    timezone: 'IST (UTC+5:30)',
-    address: 'Nexus Innovation Center, Surat, Gujarat, India',
-    isHeadquarters: true,
-  },
-  {
-    city: 'San Francisco',
-    country: 'United States',
-    flag: '🇺🇸',
-    timezone: 'PST (UTC-8)',
-    address: 'Mission Bay Technology Center, San Francisco, CA',
-  },
-  {
-    city: 'London',
-    country: 'United Kingdom',
-    flag: '🇬🇧',
-    timezone: 'GMT (UTC+0)',
-    address: 'Silicon Roundabout Innovation Hub, London, UK',
-  },
-];
-
-export const PrimaryNavGroups: (NavLink | NavGroup)[] = [
-  {
-    label: 'Overview',
-    href: '/',
-  },
-  {
-    label: 'Solutions',
-    href: '/solutions',
-    children: [
-      { label: 'AI & Intelligence', href: '/solutions/ai-intelligence', description: 'Autonomous agentic workflows & custom LLM systems' },
-      { label: 'Cloud Architecture', href: '/solutions/cloud-architecture', description: 'High-throughput distributed cloud infrastructure' },
-      { label: 'Enterprise Platforms', href: '/solutions/enterprise-platforms', description: 'Fault-tolerant web applications and microservices' },
-    ],
-  },
-  {
-    label: 'Products',
-    href: '/products',
-    children: [
-      { label: 'Cosmos Engine', href: '/products/cosmos-engine', description: 'Next-gen distributed execution engine' },
-      { label: 'Nexus Shield', href: '/products/nexus-shield', description: 'Real-time telemetry and API guardrails' },
-    ],
-  },
-  {
-    label: 'Case Studies',
-    href: '/case-studies',
-  },
-  {
-    label: 'About',
-    href: '/about',
-  },
-  {
-    label: 'Contact',
-    href: '/contact',
-  },
-];

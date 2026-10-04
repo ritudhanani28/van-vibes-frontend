@@ -3,18 +3,27 @@ import { SiteConfig } from '@/data/site-config';
 export function getOrganizationSchema() {
   return {
     '@context': 'https://schema.org',
-    '@type': 'Organization',
+    '@type': 'CafeOrCoffeeShop',
     name: SiteConfig.name,
+    alternateName: SiteConfig.hindiName,
     url: SiteConfig.url,
     description: SiteConfig.description,
+    telephone: SiteConfig.phone,
     email: SiteConfig.email.contact,
-    sameAs: [
-      SiteConfig.socials.github,
-      SiteConfig.socials.twitter,
-      SiteConfig.socials.linkedin,
-      SiteConfig.socials.discord,
-    ],
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: SiteConfig.address,
+      addressLocality: 'Surat',
+      addressRegion: 'Gujarat',
+      addressCountry: 'IN',
+    },
+    servesCuisine: SiteConfig.cuisine,
+    openingHours: SiteConfig.operatingHours,
   };
+}
+
+export function getRestaurantSchema() {
+  return getOrganizationSchema();
 }
 
 export function getBreadcrumbSchema(items: { name: string; url: string }[]) {
@@ -30,25 +39,24 @@ export function getBreadcrumbSchema(items: { name: string; url: string }[]) {
   };
 }
 
-export function getSoftwareProductSchema(product: {
+export function getMenuItemSchema(item: {
   name: string;
   description: string;
-  slug: string;
-  category: string;
+  price: number;
+  category?: string;
+  image?: string;
 }) {
   return {
     '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
-    name: product.name,
-    description: product.description,
-    applicationCategory: product.category,
-    operatingSystem: 'Cross-platform, Web, Cloud, iOS, Android',
+    '@type': 'MenuItem',
+    name: item.name,
+    description: item.description,
     offers: {
       '@type': 'Offer',
-      price: '0.00',
-      priceCurrency: 'USD',
-      description: 'Enterprise Custom Scoping & Deployment',
+      price: item.price.toFixed(2),
+      priceCurrency: 'INR',
     },
-    url: `${SiteConfig.url}/products/${product.slug}`,
+    menuAddOn: item.category,
+    image: item.image,
   };
 }

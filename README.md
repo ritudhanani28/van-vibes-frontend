@@ -1,4 +1,4 @@
-# Cosmos Nexus Innovations — Production Next.js 16 Starter Template
+# Vaan Vibes Cafe & Restro — Customer Frontend
 
 A modern, high-performance, enterprise-grade web application boilerplate built with **Next.js 16 (App Router)**, **React 19**, **TypeScript**, and **Tailwind CSS v4**.
 
@@ -80,7 +80,7 @@ You only need to edit **`.env.example`** or **`.env.local`**. The entire applica
 
 | Variable | Description | Example / Default |
 |---|---|---|
-| `NEXT_PUBLIC_APP_NAME` | Project / Company Name | `"Cosmos Nexus Innovations"` |
+| `NEXT_PUBLIC_APP_NAME` | Project / Company Name | `"Vaan Vibes Cafe & Restro"` |
 | `NEXT_PUBLIC_APP_TAGLINE` | Short brand slogan / subtitle | `"Next-Generation Digital Systems"` |
 | `NEXT_PUBLIC_APP_DESCRIPTION` | Meta description & summary | `"Architecting mission-critical digital systems..."` |
 | `NEXT_PUBLIC_APP_URL` | Canonical application URL | `"http://localhost:4000"` |
@@ -217,7 +217,7 @@ The GitHub Actions workflow at `.github/workflows/ci-cd.yml` automates the relea
      - `PROD_SSH_KEY`: Private SSH deployment key
      - `PROD_USERNAME`: Remote SSH user (default: `root`)
      - `PROD_PORT`: Remote SSH port (default: `22`)
-     - `PROD_DEPLOY_PATH`: Target directory path on server (default: `/var/www/cosmosnexusinnovations-frontend`)
+     - `PROD_DEPLOY_PATH`: Target directory path on server (default: `/var/www/van-vibes-frontend`)
 
 ---
 

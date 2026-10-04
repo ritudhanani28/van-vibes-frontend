@@ -1,5 +1,5 @@
 # ==============================================================================
-# Cosmos Nexus Innovations — Frontend Automated Setup Script (PowerShell)
+# Vaan Vibes Cafe & Restro — Frontend Automated Setup Script (PowerShell)
 # Supported Platforms: Windows 10/11, Windows Server, PowerShell Core
 # ==============================================================================
 
@@ -11,7 +11,7 @@ $MinNodeVersion = 20
 
 function Write-Header {
     Write-Host "================================================================================" -ForegroundColor Cyan
-    Write-Host "       COSMOS NEXUS INNOVATIONS — FRONTEND SETUP & BOOTSTRAP WIZARD             " -ForegroundColor Cyan
+    Write-Host "       VAAN VIBES CAFE & RESTRO — FRONTEND SETUP & BOOTSTRAP WIZARD             " -ForegroundColor Cyan
     Write-Host "================================================================================" -ForegroundColor Cyan
     Write-Host "Target Directory: $PSScriptRoot"
     Write-Host ""
@@ -117,7 +117,7 @@ Write-Success "Vitest automated test suite passed"
 
 Write-Host ""
 Write-Host "================================================================================" -ForegroundColor Green
-Write-Host "  ✓ SETUP COMPLETE: Cosmos Nexus Innovations Frontend is Ready!                 " -ForegroundColor Green
+Write-Host "  ✓ SETUP COMPLETE: Vaan Vibes Cafe & Restro Frontend is Ready!                 " -ForegroundColor Green
 Write-Host "================================================================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "Available commands:"
