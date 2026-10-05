@@ -348,6 +348,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             } else if (
               parsed.event === 'ORDER_STATUS_UPDATED' ||
               parsed.event === 'ORDER_PLACED' ||
+              parsed.event === 'ORDER_ACCEPTED' ||
+              parsed.event === 'ORDER_CANCELLED' ||
               parsed.event === 'TABLE_STATUS_UPDATED'
             ) {
               const eventTableId = parsed.data?.tableId || parsed.tableId;

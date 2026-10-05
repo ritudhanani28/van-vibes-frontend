@@ -161,7 +161,7 @@ export function ItemCustomizationModal({ item, onClose }: Props) {
           {item.addOns && item.addOns.length > 0 && (
             <div className="space-y-2">
               <label className="text-xs font-bold text-brand-green tracking-wide uppercase">
-                Add-Ons & Extras (Optional)
+                Add-one (Optional)
               </label>
               <div className="space-y-1.5">
                 {item.addOns.map((addon) => {

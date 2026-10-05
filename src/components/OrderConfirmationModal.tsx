@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { useCart } from '@/context/CartContext';
-import { X, CheckCircle2, AlertCircle, ArrowLeft, Loader2, User, Phone, MessageSquare } from 'lucide-react';
+import { X, CheckCircle2, AlertCircle, AlertTriangle, ArrowLeft, Loader2, User, Phone, MessageSquare } from 'lucide-react';
 
 export function OrderConfirmationModal() {
   const {
@@ -20,6 +20,7 @@ export function OrderConfirmationModal() {
   } = useCart();
 
   const [step, setStep] = useState<'details' | 'summary'>('details');
+  const [showWarningModal, setShowWarningModal] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ name?: string; mobile?: string }>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
 
@@ -107,9 +108,11 @@ export function OrderConfirmationModal() {
     setGeneralError(null);
     const res = await placeOrder();
     if (res.success) {
+      setShowWarningModal(false);
       setStep('details');
       setFieldErrors({});
     } else {
+      setShowWarningModal(false);
       if (res.fieldErrors && Object.keys(res.fieldErrors).length > 0) {
         setFieldErrors(res.fieldErrors);
         setStep('details');
@@ -426,9 +429,80 @@ export function OrderConfirmationModal() {
               </button>
               <button
                 type="button"
-                onClick={handleConfirmOrder}
+                onClick={() => setShowWarningModal(true)}
                 disabled={isPlacingOrder}
                 className="flex-1 py-2.5 sm:py-3 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs sm:text-sm shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-60 min-h-[44px] cursor-pointer"
+              >
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>Confirm & Place Order (₹{total.toFixed(0)})</span>
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Warning Confirmation Modal */}
+      {showWarningModal && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => {
+            if (!isPlacingOrder) setShowWarningModal(false);
+          }}
+        >
+          <div
+            className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-brand-beige-dark overflow-hidden p-5 sm:p-6 space-y-4 animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header Icon & Title */}
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="font-black text-lg text-brand-green leading-tight">
+                  Confirm & Place Order?
+                </h4>
+                <p className="text-xs text-brand-green/60 font-mono mt-0.5">
+                  {table ? `Table ${table.tableNumber}` : 'Dining Order'} • Vaan Vibes
+                </p>
+              </div>
+            </div>
+
+            {/* Total Display */}
+            <div className="p-3.5 rounded-2xl bg-brand-beige-light/70 border border-brand-beige-dark/60 flex items-center justify-between">
+              <span className="text-xs font-bold text-brand-green/70 uppercase tracking-wide">
+                Order Total
+              </span>
+              <span className="font-mono font-black text-lg text-brand-green">
+                ₹{total.toFixed(2)}
+              </span>
+            </div>
+
+            {/* Cancellation Notice Warning */}
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-50/90 border border-amber-200/90 text-amber-950 text-xs space-y-2">
+              <p className="font-bold text-amber-900 leading-snug">
+                Important: Orders cannot normally be cancelled after they are accepted by the restaurant.
+              </p>
+              <p className="text-amber-800/90 leading-relaxed text-[11px] sm:text-xs">
+                Once the restaurant accepts your order, cancellation may no longer be available. Please review your order carefully before confirming.
+              </p>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                disabled={isPlacingOrder}
+                onClick={() => setShowWarningModal(false)}
+                className="flex-1 py-2.5 sm:py-3 px-4 rounded-xl border border-brand-beige-dark font-bold text-xs text-brand-green/80 hover:bg-brand-beige transition-colors disabled:opacity-50 cursor-pointer min-h-[44px]"
+              >
+                Cancel / Go Back
+              </button>
+              <button
+                type="button"
+                disabled={isPlacingOrder}
+                onClick={handleConfirmOrder}
+                className="flex-1 py-2.5 sm:py-3 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs sm:text-sm shadow-md transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer min-h-[44px]"
               >
                 {isPlacingOrder ? (
                   <>
@@ -438,14 +512,14 @@ export function OrderConfirmationModal() {
                 ) : (
                   <>
                     <CheckCircle2 className="w-4 h-4 shrink-0" />
-                    <span>Confirm & Place Order (₹{total.toFixed(0)})</span>
+                    <span>Confirm & Place Order</span>
                   </>
                 )}
               </button>
-            </>
-          )}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

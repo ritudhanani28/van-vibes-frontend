@@ -113,6 +113,14 @@ export interface Order {
   sessionStatus?: SessionStatus;
   session_status?: string;
   billGenerated?: boolean;
+  cancellationReason?: string;
+  cancellation_reason?: string;
+  cancellationNote?: string;
+  cancellation_note?: string;
+  cancelledBy?: 'customer' | 'management' | 'admin' | string;
+  cancelled_by?: 'customer' | 'management' | 'admin' | string;
+  cancelledAt?: string;
+  cancelled_at?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -147,7 +155,14 @@ export interface BillData {
     quantity: number;
     unitPrice: number;
     totalPrice: number;
+    baseUnitPrice?: number;
+    baseTotalPrice?: number;
     notes?: string;
+    extras?: {
+      name: string;
+      price: number;
+      total: number;
+    }[];
   }[];
   subtotal: number;
   cgst: number;
@@ -158,6 +173,9 @@ export interface BillData {
   extraCharge?: number;
   total: number;
   paymentStatus: PaymentStatus;
+  upiId?: string;
+  upiPayeeName?: string;
+  paymentQrCode?: string;
   createdAt: string;
   hasIncompleteOrders?: boolean;
   incompleteOrders?: Array<{

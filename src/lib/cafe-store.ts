@@ -7,9 +7,9 @@ export const CAFE_INFO: CafeDetails = {
   name: 'Vaan Vibes Cafe & Restro',
   hindiName: 'वन VIBES',
   tagline: 'Cafe & Restro • Taste the Vibe',
-  address: 'Main Promenade, Serenita Arts Quarter, Surat, Gujarat - 395007',
-  phone: '+91 98765 43210',
-  gstin: '24AAAAA0000A1Z5',
+  address: 'Titanium The Business Hub, G-17, Bhimrad Rd, opp. Aakash Empire, beside White Temple, Surat, Gujarat 395007',
+  phone: '+91 9904990790',
+  gstin: '',
   currency: '₹',
   taxRate: 0, // No GST
 };
@@ -436,18 +436,39 @@ export const CafeStore = {
       customerMobile: order.customerMobile,
       specialInstructions: order.specialInstructions,
       items: sessionOrders.flatMap((so) =>
-        so.items.map((i) => ({
-          name: i.name,
-          quantity: i.quantity,
-          unitPrice: i.price,
-          totalPrice: i.price * i.quantity,
-          notes: [
-            i.selectedOptions ? Object.values(i.selectedOptions).join(', ') : '',
-            i.selectedAddOns ? i.selectedAddOns.join(', ') : '',
-          ]
-            .filter(Boolean)
-            .join(' | '),
-        }))
+        so.items.map((i) => {
+          const canonical = MENU_ITEMS.find((m) => m.id === i.menuItemId || m.name === i.name);
+          const extrasList: { name: string; price: number; total: number }[] = [];
+          if (i.selectedAddOns && i.selectedAddOns.length > 0) {
+            for (const addOnName of i.selectedAddOns) {
+              const matched = canonical?.addOns?.find((a) => a.name === addOnName);
+              const addOnPrice = matched ? matched.price : 0;
+              extrasList.push({
+                name: addOnName,
+                price: addOnPrice,
+                total: addOnPrice * i.quantity,
+              });
+            }
+          }
+          const sumExtrasUnit = extrasList.reduce((acc, e) => acc + e.price, 0);
+          const baseUnitPrice = canonical ? canonical.price : Math.max(0, i.price - sumExtrasUnit);
+          const baseTotalPrice = baseUnitPrice * i.quantity;
+
+          return {
+            name: i.name,
+            quantity: i.quantity,
+            unitPrice: i.price,
+            totalPrice: i.price * i.quantity,
+            baseUnitPrice,
+            baseTotalPrice,
+            extras: extrasList.length > 0 ? extrasList : undefined,
+            notes: [
+              i.selectedOptions ? Object.values(i.selectedOptions).join(', ') : '',
+            ]
+              .filter(Boolean)
+              .join(' | '),
+          };
+        })
       ),
       subtotal,
       cgst,

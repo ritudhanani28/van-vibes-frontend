@@ -155,7 +155,7 @@ export function CartDrawer() {
                         )}
                         {item.selectedAddOns && item.selectedAddOns.length > 0 && (
                           <p className="text-[10px] sm:text-[11px] text-brand-gold font-medium break-words">
-                            Extras: {item.selectedAddOns.join(', ')}
+                            Extra: {item.selectedAddOns.join(', ')}
                           </p>
                         )}
                         {item.specialInstructions && (

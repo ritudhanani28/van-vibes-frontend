@@ -41,6 +41,15 @@ function getStatusStepIndex(status: OrderStatus): number {
   }
 }
 
+const CUSTOMER_CANCELLATION_REASONS = [
+  'Ordered by mistake',
+  'Changed my mind',
+  'Ordered the wrong item',
+  'Taking too long',
+  'No longer needed',
+  'Other',
+];
+
 export function OrderTrackingModal() {
   const {
     isOrdersOpen,
@@ -65,42 +74,74 @@ export function OrderTrackingModal() {
 
   // Cancel Confirmation Popup State
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
+  const [selectedReason, setSelectedReason] = useState<string>('');
+  const [customReasonNote, setCustomReasonNote] = useState<string>('');
+  const [reasonFieldError, setReasonFieldError] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [cancelSuccess, setCancelSuccess] = useState<string | null>(null);
 
   const handleOpenCancelConfirmation = (order: Order) => {
     setOrderToCancel(order);
+    setSelectedReason('');
+    setCustomReasonNote('');
+    setReasonFieldError(null);
     setCancelError(null);
   };
 
   const handleCloseCancelConfirmation = () => {
     if (!isCancelling) {
       setOrderToCancel(null);
+      setSelectedReason('');
+      setCustomReasonNote('');
+      setReasonFieldError(null);
       setCancelError(null);
     }
   };
 
   const handleConfirmCancelOrder = async () => {
-    if (!orderToCancel) return;
+    if (!orderToCancel || isCancelling) return;
+
+    if (!selectedReason) {
+      setReasonFieldError('Please select a cancellation reason.');
+      return;
+    }
+
+    if (selectedReason === 'Other' && !customReasonNote.trim()) {
+      setReasonFieldError('Please tell us why you want to cancel.');
+      return;
+    }
+
+    const finalReason = selectedReason === 'Other' ? customReasonNote.trim() : selectedReason;
+    const finalNote = selectedReason === 'Other' ? customReasonNote.trim() : undefined;
+
     setIsCancelling(true);
     setCancelError(null);
+    setReasonFieldError(null);
 
     try {
       const res = await fetch(`/api/orders/${orderToCancel.id}/cancel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: 'Customer requested cancellation' }),
+        body: JSON.stringify({
+          reason: finalReason,
+          cancellation_note: finalNote,
+          cancelled_by: 'customer',
+        }),
       });
 
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        const errorMsg =
-          data.error ||
-          data.detail ||
-          data.message ||
-          'Cannot cancel this order. It may have already been accepted by the kitchen.';
+        let errorMsg = data.error || data.detail || data.message || 'Cannot cancel this order.';
+        if (
+          errorMsg.toLowerCase().includes('already been accepted') ||
+          errorMsg.toLowerCase().includes('in kitchen') ||
+          errorMsg.toLowerCase().includes('served') ||
+          errorMsg.toLowerCase().includes('stage')
+        ) {
+          errorMsg = 'This order has already been accepted by the restaurant and can no longer be cancelled.';
+        }
         setCancelError(errorMsg);
         // Refresh orders immediately so the UI reflects that it was accepted or progressed
         await fetchOrders();
@@ -273,7 +314,7 @@ export function OrderTrackingModal() {
           onClick={handleCloseCancelConfirmation}
         >
           <div
-            className="w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-brand-beige-dark overflow-hidden p-6 space-y-4 animate-in zoom-in-95 duration-150"
+            className="w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-brand-beige-dark overflow-hidden p-5 sm:p-6 space-y-4 animate-in zoom-in-95 duration-150"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header Icon & Title */}
@@ -286,29 +327,73 @@ export function OrderTrackingModal() {
                   Cancel Order?
                 </h4>
                 <p className="text-xs text-brand-green/60 font-mono mt-0.5">
-                  Order #{orderToCancel.id}
+                  Order #{orderToCancel.id} • Table {orderToCancel.tableNumber}
                 </p>
               </div>
             </div>
 
             {/* Error Message if backend rejects (e.g. accepted by kitchen) */}
             {cancelError && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs flex items-start gap-2">
+              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs flex items-start gap-2 animate-in fade-in duration-150">
                 <AlertCircle className="w-4 h-4 shrink-0 text-red-500 mt-0.5" />
-                <span className="leading-relaxed">{cancelError}</span>
+                <div className="space-y-0.5">
+                  <span className="font-bold block">Order cannot be cancelled</span>
+                  <span className="leading-relaxed block text-[11px]">{cancelError}</span>
+                </div>
               </div>
             )}
 
-            {/* Warning details */}
-            <div className="bg-brand-beige-light/70 p-3.5 rounded-2xl border border-brand-beige-dark/60 text-xs text-brand-green/80 space-y-2">
-              <div className="flex justify-between items-center text-brand-green font-bold text-xs">
-                <span>Table {orderToCancel.tableNumber}</span>
-                <span className="font-mono">Total: ₹{orderToCancel.total.toFixed(2)}</span>
-              </div>
-              <p className="text-[11px] text-brand-green/70 leading-relaxed">
-                Orders can only be cancelled <span className="font-bold text-brand-green">before</span> they are accepted by the kitchen. Once accepted, preparation starts and the order cannot be cancelled.
-              </p>
+            {/* Confirmation Question */}
+            <p className="text-xs text-brand-green/70 leading-relaxed">
+              Are you sure you want to cancel this order? This action cannot be undone.
+            </p>
+
+            {/* Reason Selection */}
+            <div className="space-y-1.5 text-left">
+              <label className="text-[11px] font-bold text-brand-green/80 uppercase tracking-wide block">
+                Reason for cancellation <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={selectedReason}
+                onChange={(e) => {
+                  setSelectedReason(e.target.value);
+                  setReasonFieldError(null);
+                }}
+                disabled={isCancelling}
+                className="w-full px-3 py-2.5 rounded-xl border border-brand-beige-dark bg-brand-beige-light/50 text-brand-green text-xs font-medium focus:outline-none focus:ring-2 focus:ring-brand-green/30 cursor-pointer"
+              >
+                <option value="">Select a reason...</option>
+                {CUSTOMER_CANCELLATION_REASONS.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
             </div>
+
+            {/* Custom Reason Textarea if 'Other' is chosen */}
+            {selectedReason === 'Other' && (
+              <div className="space-y-1 text-left animate-in fade-in duration-150">
+                <label className="text-[11px] font-bold text-brand-green/80 uppercase tracking-wide block">
+                  Tell us why you want to cancel <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={customReasonNote}
+                  onChange={(e) => {
+                    setCustomReasonNote(e.target.value);
+                    setReasonFieldError(null);
+                  }}
+                  disabled={isCancelling}
+                  placeholder="Tell us why you want to cancel..."
+                  rows={2}
+                  className="w-full px-3 py-2 rounded-xl border border-brand-beige-dark bg-brand-beige-light/50 text-brand-green text-xs focus:outline-none focus:ring-2 focus:ring-brand-green/30 resize-none"
+                />
+              </div>
+            )}
+
+            {reasonFieldError && (
+              <p className="text-red-600 text-xs font-semibold">{reasonFieldError}</p>
+            )}
 
             {/* Action Buttons */}
             <div className="flex items-center justify-end gap-2.5 pt-2">
@@ -334,7 +419,7 @@ export function OrderTrackingModal() {
                 ) : (
                   <>
                     <XCircle className="w-3.5 h-3.5" />
-                    <span>Yes, Cancel</span>
+                    <span>Cancel Order</span>
                   </>
                 )}
               </button>
@@ -477,8 +562,48 @@ function OrderCard({
           </div>
         </div>
       ) : (
-        <div className="p-3 rounded-xl bg-red-50 text-red-700 text-xs font-bold text-center border border-red-200">
-          Order Cancelled
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-red-50/90 border border-red-200 text-red-950 space-y-2.5">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <span className="px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-black tracking-wide uppercase bg-red-600 text-white shadow-2xs">
+              Status: Cancelled
+            </span>
+            {(order.cancelledAt || order.cancelled_at) && (
+              <span className="text-[11px] text-red-700 font-mono font-bold">
+                Cancelled at {new Date(order.cancelledAt || order.cancelled_at!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+          </div>
+
+          <div className="pt-2 border-t border-red-200/70 space-y-1.5 text-xs">
+            <div className="flex items-baseline gap-2">
+              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-red-800 shrink-0">
+                Cancelled by:
+              </span>
+              <span className="font-extrabold text-red-950 capitalize">
+                {(() => {
+                  const canceller = (order.cancelledBy || order.cancelled_by || '').toLowerCase();
+                  return canceller === 'management' || canceller === 'admin' ? 'Management' : 'Customer';
+                })()}
+              </span>
+            </div>
+
+            {(order.cancellationReason || order.cancellation_reason) && (
+              <div className="flex items-baseline gap-2">
+                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-red-800 shrink-0">
+                  Cancellation reason:
+                </span>
+                <span className="font-semibold text-red-900">
+                  {order.cancellationReason || order.cancellation_reason}
+                </span>
+              </div>
+            )}
+
+            {(order.cancellationNote || order.cancellation_note) && (
+              <div className="text-[11px] text-red-800/90 italic pl-1">
+                Note: {order.cancellationNote || order.cancellation_note}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
