@@ -222,11 +222,11 @@ export const CafeStore = {
 
     // 2. Validate Customer Details
     if (!data.customerName || data.customerName.trim().length < 2) {
-      return { success: false, error: 'Customer name is required (minimum 2 characters)' };
+      return { success: false, error: 'Please enter your full name (minimum 2 characters)' };
     }
-    const cleanMobile = data.customerMobile?.replace(/\D/g, '') || '';
-    if (cleanMobile.length < 10) {
-      return { success: false, error: 'A valid 10-digit mobile number is required' };
+    const cleanMobile = (data.customerMobile || '').trim();
+    if (!/^\d{10}$/.test(cleanMobile)) {
+      return { success: false, error: 'Phone number must contain exactly 10 digits' };
     }
 
     // 3. Validate and Calculate Items server-side from authoritative MENU_ITEMS

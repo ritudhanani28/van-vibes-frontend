@@ -52,7 +52,7 @@ interface CartContextType {
   tax: number;
   total: number;
 
-  placeOrder: () => Promise<{ success: boolean; order?: Order; error?: string }>;
+  placeOrder: () => Promise<{ success: boolean; order?: Order; error?: string; fieldErrors?: Record<string, string> }>;
   fetchOrders: () => Promise<void>;
   getItemQuantityInCart: (menuItemId: string) => number;
 }
@@ -426,17 +426,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return { success: false, error: err };
     }
 
-    if (!customerDetails.name || customerDetails.name.trim().length < 2) {
-      const err = 'Please enter your full name.';
+    const trimmedName = customerDetails.name ? customerDetails.name.trim() : '';
+    if (!trimmedName || trimmedName.length < 2) {
+      const err = 'Please enter your full name (minimum 2 characters).';
       setOrderError(err);
-      return { success: false, error: err };
+      return { success: false, error: err, fieldErrors: { name: err } };
     }
 
-    const cleanMobile = customerDetails.mobile.replace(/\D/g, '');
-    if (cleanMobile.length < 10) {
-      const err = 'Please enter a valid 10-digit mobile number.';
+    const cleanMobile = (customerDetails.mobile || '').trim();
+    if (!/^\d{10}$/.test(cleanMobile)) {
+      const err = 'Phone number must contain exactly 10 digits';
       setOrderError(err);
-      return { success: false, error: err };
+      return { success: false, error: err, fieldErrors: { mobile: err } };
     }
 
     setIsPlacingOrder(true);
@@ -451,7 +452,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           token: table.token,
           diningSessionId: table.activeSession?.id,
           sessionToken,
-          customerName: customerDetails.name.trim(),
+          customerName: trimmedName,
           customerMobile: cleanMobile,
           specialInstructions: customerDetails.specialInstructions,
           items: cart,
@@ -461,10 +462,31 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        const errorMsg = data.error || 'Failed to place order';
+        const errorMsg = data.message || data.error || 'Failed to place order';
+        const rawFieldErrors =
+          data.fieldErrors ||
+          (Array.isArray(data.errors)
+            ? Object.fromEntries(
+                data.errors
+                  .filter((e: { field?: string; message?: string }) => e && e.field)
+                  .map((e: { field?: string; message?: string }) => [e.field || '', e.message || ''])
+              )
+            : {});
+
+        const fieldErrors: Record<string, string> = {};
+        for (const [key, val] of Object.entries(rawFieldErrors)) {
+          if (key === 'customerMobile' || key === 'customer_mobile') {
+            fieldErrors['mobile'] = String(val);
+          } else if (key === 'customerName' || key === 'customer_name') {
+            fieldErrors['name'] = String(val);
+          } else {
+            fieldErrors[key] = String(val);
+          }
+        }
+
         setOrderError(errorMsg);
         setIsPlacingOrder(false);
-        return { success: false, error: errorMsg };
+        return { success: false, error: errorMsg, fieldErrors };
       }
 
       // Order created successfully!
@@ -486,7 +508,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
       return { success: true, order: data.order };
     } catch (err: unknown) {
-      const errorMsg = err instanceof Error ? err.message : 'Network error placing order';
+      const errorMsg =
+        err instanceof Error && !err.message.includes('fetch')
+          ? err.message
+          : 'Unable to connect to the server. Please try again.';
       setOrderError(errorMsg);
       setIsPlacingOrder(false);
       return { success: false, error: errorMsg };

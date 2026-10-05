@@ -88,10 +88,33 @@ export async function POST(request: NextRequest) {
           message: 'Order created successfully!',
           order: backendOrder,
         });
-      } else if (backendRes.status >= 400 && backendRes.status < 500) {
+      } else if (backendRes.status >= 400) {
         const errorData = await backendRes.json().catch(() => ({}));
-        const detail = errorData.detail || errorData.error || 'Failed to place order';
-        return NextResponse.json({ success: false, error: detail }, { status: backendRes.status });
+        const message =
+          errorData.message ||
+          errorData.detail ||
+          errorData.error ||
+          (backendRes.status === 422 ? 'Validation failed' : 'Failed to place order');
+        const fieldErrors =
+          errorData.fieldErrors ||
+          (Array.isArray(errorData.errors)
+            ? Object.fromEntries(
+                errorData.errors
+                  .filter((e: { field?: string; message?: string }) => e && e.field)
+                  .map((e: { field?: string; message?: string }) => [e.field || '', e.message || ''])
+              )
+            : undefined);
+
+        return NextResponse.json(
+          {
+            success: false,
+            error: message,
+            message,
+            fieldErrors,
+            errors: errorData.errors || [],
+          },
+          { status: backendRes.status }
+        );
       }
     } catch {
       // Backend unavailable; proceed to local store
