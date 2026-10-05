@@ -4,31 +4,29 @@ import React from 'react';
 import { useCart } from '@/context/CartContext';
 import { ShoppingBag, Clock, Search } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export function CafeHeader() {
   const { isHydrated, table, itemCount, total, setIsCartOpen, activeOrders, setIsOrdersOpen, setIsSearchOpen } = useCart();
 
   return (
     <header className="w-full bg-brand-green text-brand-beige border-b border-brand-green-light/80 shadow-xs">
-      <div className="max-w-6xl mx-auto px-2.5 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between gap-1.5 sm:gap-3">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-1.5 sm:py-2 flex items-center justify-between gap-2 sm:gap-3">
         {/* Logo & Cafe Identity */}
-        <Link href="/" className="flex items-center gap-1.5 sm:gap-2.5 group min-w-0 flex-1">
-          <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-brand-beige text-brand-green font-black flex items-center justify-center text-sm sm:text-lg shadow-sm border border-brand-gold shrink-0">
-            व
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-1 sm:gap-1.5">
-              <span className="font-black text-sm sm:text-lg tracking-tight text-brand-beige whitespace-nowrap">
-                वन VIBES
-              </span>
-              <span className="text-[8px] sm:text-[9px] uppercase font-bold tracking-wider px-1 py-0.5 rounded bg-brand-gold text-brand-green whitespace-nowrap">
-                Cafe & Restro
-              </span>
-            </div>
-            <p className="text-[9px] sm:text-[10px] text-brand-beige-muted tracking-wide uppercase font-medium truncate max-w-[120px] xs:max-w-[180px] sm:max-w-none">
-              Taste the Vibe
-            </p>
-          </div>
+        <Link
+          href="/"
+          className="flex items-center group shrink-0 transition-opacity hover:opacity-90 active:scale-98"
+          title="वन Vibes Cafe & Restro - Home"
+        >
+          <Image
+            src="/images/van-vibes-logo-white.png"
+            alt="वन Vibes Cafe & Restro"
+            width={240}
+            height={184}
+            priority
+            unoptimized
+            className="h-11 sm:h-12 md:h-13 lg:h-14 w-auto object-contain transition-transform duration-200 group-hover:scale-102"
+          />
         </Link>
 
         {/* Table Badge & Action Pills */}
