@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { MenuItem } from '@/types/cafe';
 import { useCart } from '@/context/CartContext';
-import { X, Plus, Minus, Check } from 'lucide-react';
+import { X, Plus, Minus, Check, AlertCircle } from 'lucide-react';
 
 interface Props {
   item: MenuItem | null;
@@ -14,17 +14,9 @@ export function ItemCustomizationModal({ item, onClose }: Props) {
   const { addItem } = useCart();
 
   const [quantity, setQuantity] = useState(1);
-  const [selectedOptions, setSelectedOptions] = useState<{ [key: string]: string }>(() => {
-    const initial: { [key: string]: string } = {};
-    if (item?.options) {
-      for (const opt of item.options) {
-        if (opt.choices.length > 0) {
-          initial[opt.name] = opt.choices[0].name;
-        }
-      }
-    }
-    return initial;
-  });
+  // Start with clean, unselected choices so user can explicitly choose (no automatic default pre-selection)
+  const [selectedOptions, setSelectedOptions] = useState<{ [key: string]: string }>({});
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
   const [specialInstructions, setSpecialInstructions] = useState('');
@@ -48,7 +40,16 @@ export function ItemCustomizationModal({ item, onClose }: Props) {
     );
   };
 
+  const missingOptions = item.options?.filter((opt) => !selectedOptions[opt.name]) || [];
+  const allOptionsSelected = missingOptions.length === 0;
+
   const handleAddToCart = () => {
+    if (!allOptionsSelected) {
+      setValidationError(`Please select ${missingOptions.map((o) => o.name).join(', ')}`);
+      return;
+    }
+
+    setValidationError(null);
     addItem(
       item,
       quantity,
@@ -95,35 +96,66 @@ export function ItemCustomizationModal({ item, onClose }: Props) {
 
           {/* Options (Radio choice) */}
           {item.options &&
-            item.options.map((opt) => (
-              <div key={opt.name} className="space-y-2">
-                <label className="text-xs font-bold text-brand-green tracking-wide uppercase">
-                  {opt.name} <span className="text-red-500">*</span>
-                </label>
-                <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
-                  {opt.choices.map((choice) => {
-                    const isSelected = selectedOptions[opt.name] === choice.name;
-                    return (
-                      <button
-                        type="button"
-                        key={choice.name}
-                        onClick={() =>
-                          setSelectedOptions((prev) => ({ ...prev, [opt.name]: choice.name }))
-                        }
-                        className={`flex items-center justify-between px-3 py-2.5 rounded-xl border text-xs font-semibold transition-all min-h-[40px] ${
-                          isSelected
-                            ? 'bg-brand-green text-brand-beige border-brand-green shadow-xs'
-                            : 'bg-brand-beige-light text-brand-green border-brand-beige-dark hover:border-brand-green/40'
-                        }`}
-                      >
-                        <span className="truncate mr-1">{choice.name}</span>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-brand-gold shrink-0" />}
-                      </button>
-                    );
-                  })}
+            item.options.map((opt) => {
+              const isOptionMissing = Boolean(validationError && !selectedOptions[opt.name]);
+              const selectedChoice = selectedOptions[opt.name];
+
+              return (
+                <div
+                  key={opt.name}
+                  className={`space-y-2 p-2.5 rounded-2xl transition-all ${
+                    isOptionMissing
+                      ? 'bg-amber-50/70 border border-amber-300 ring-2 ring-amber-400/20'
+                      : 'bg-transparent'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-brand-green tracking-wide uppercase flex items-center gap-1">
+                      <span>{opt.name}</span>
+                      <span className="text-red-500 font-bold">*</span>
+                    </label>
+                    {selectedChoice ? (
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100/90 border border-emerald-300 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <Check className="w-3 h-3 text-emerald-700" />
+                        <span>{selectedChoice}</span>
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-medium text-brand-green/60 italic">
+                        {isOptionMissing ? 'Required — select one' : 'Select one'}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 xs:grid-cols-2 gap-2">
+                    {opt.choices.map((choice) => {
+                      const isSelected = selectedOptions[opt.name] === choice.name;
+                      return (
+                        <button
+                          type="button"
+                          key={choice.name}
+                          onClick={() => {
+                            setValidationError(null);
+                            setSelectedOptions((prev) => ({ ...prev, [opt.name]: choice.name }));
+                          }}
+                          className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-xs font-semibold transition-all min-h-[42px] cursor-pointer active:scale-98 ${
+                            isSelected
+                              ? 'bg-brand-green text-brand-beige border-brand-green shadow-xs'
+                              : 'bg-white text-brand-green border-brand-beige-dark hover:border-brand-green/50 hover:bg-brand-beige-light/50'
+                          }`}
+                        >
+                          <span className="truncate mr-1">{choice.name}</span>
+                          {isSelected ? (
+                            <Check className="w-4 h-4 text-brand-gold shrink-0" />
+                          ) : (
+                            <div className="w-3.5 h-3.5 rounded-full border border-brand-beige-dark shrink-0" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
           {/* Add-Ons (Checkbox choices) */}
           {item.addOns && item.addOns.length > 0 && (
@@ -206,13 +238,24 @@ export function ItemCustomizationModal({ item, onClose }: Props) {
         </div>
 
         {/* Modal Action Bar */}
-        <div className="p-3.5 sm:p-4 bg-brand-beige-light border-t border-brand-beige-muted/60 shrink-0 pb-[calc(0.875rem+env(safe-area-inset-bottom,0px))]">
+        <div className="p-3.5 sm:p-4 bg-brand-beige-light border-t border-brand-beige-muted/60 shrink-0 pb-[calc(0.875rem+env(safe-area-inset-bottom,0px))] space-y-2">
+          {validationError && (
+            <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
+              <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
+              <span>{validationError}</span>
+            </div>
+          )}
+
           <button
             type="button"
             onClick={handleAddToCart}
-            className="w-full py-3 px-4 rounded-xl bg-brand-green hover:bg-brand-green-hover text-brand-beige font-bold text-sm flex items-center justify-between shadow-md active:scale-[0.99] transition-all min-h-[48px]"
+            className={`w-full py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-between shadow-md active:scale-[0.99] transition-all min-h-[48px] cursor-pointer ${
+              allOptionsSelected
+                ? 'bg-brand-green hover:bg-brand-green-hover text-brand-beige'
+                : 'bg-brand-green/85 hover:bg-brand-green text-brand-beige'
+            }`}
           >
-            <span>Add to Cart</span>
+            <span>{allOptionsSelected ? 'Add to Cart' : `Select ${missingOptions[0]?.name || 'Option'}`}</span>
             <div className="flex items-baseline gap-1.5">
               <span className="font-mono font-black text-brand-gold">
                 ₹{(calculatedPrice * quantity).toFixed(0)}
