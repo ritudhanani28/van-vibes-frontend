@@ -67,7 +67,7 @@ export function FoodCard({ item, index = 0 }: Props) {
           }`}
         >
         {/* Top Badges */}
-        <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="flex items-center justify-between gap-2 mb-2">
           {/* Veg Dot Symbol & Popular/Unavailable Badge */}
           <div className="flex items-center gap-1.5">
             <span className="w-4 h-4 rounded border border-emerald-600 p-0.5 flex items-center justify-center bg-emerald-50 shrink-0">
@@ -79,11 +79,6 @@ export function FoodCard({ item, index = 0 }: Props) {
               </span>
             ) : null}
           </div>
-
-          {/* Category Tag */}
-          <span className="text-[10px] font-semibold text-brand-green/50 uppercase tracking-wider bg-brand-beige-light px-2 py-0.5 rounded whitespace-nowrap">
-            {item.category.replace('-', ' ')}
-          </span>
         </div>
 
         {/* Item Details */}
