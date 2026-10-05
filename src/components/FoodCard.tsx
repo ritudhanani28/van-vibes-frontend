@@ -12,7 +12,7 @@ interface Props {
   index?: number;
 }
 
-export function FoodCard({ item, index = 0 }: Props) {
+export const FoodCard = React.memo(function FoodCard({ item, index = 0 }: Props) {
   const { addItem, updateQuantity, cart, getItemQuantityInCart } = useCart();
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
 
@@ -171,4 +171,4 @@ export function FoodCard({ item, index = 0 }: Props) {
       )}
     </>
   );
-}
+});

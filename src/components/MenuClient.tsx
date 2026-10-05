@@ -38,6 +38,12 @@ export function MenuClient({ defaultCafeId }: { defaultCafeId?: string } = {}) {
   const [isValidating, setIsValidating] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
+  // Stable ref for table to avoid unnecessary re-validations
+  const tableRef = useRef(table);
+  useEffect(() => {
+    tableRef.current = table;
+  }, [table]);
+
   // Validate QR token on mount
   useEffect(() => {
     let isCancelled = false;
@@ -65,18 +71,22 @@ export function MenuClient({ defaultCafeId }: { defaultCafeId?: string } = {}) {
         normalizedId = `T${num.toString().padStart(2, '0')}`;
       }
 
-      // If no table param provided at all, load first table or Table 01
+      // If no table param provided at all, load first table or Table 01 if none selected
       if (!tableQuery) {
-        try {
-          const res = await fetch('/api/tables');
-          const data = await res.json();
-          if (data.tables && data.tables.length > 0 && !isCancelled) {
-            setTable(data.tables[0]);
+        if (!tableRef.current) {
+          try {
+            const res = await fetch('/api/tables');
+            const data = await res.json();
+            if (data.tables && data.tables.length > 0 && !isCancelled) {
+              setTable(data.tables[0]);
+            }
+          } catch {
+            // ignore
+          } finally {
+            if (!isCancelled) setIsValidating(false);
           }
-        } catch {
-          // ignore
-        } finally {
-          if (!isCancelled) setIsValidating(false);
+        } else {
+          setIsValidating(false);
         }
         return;
       }

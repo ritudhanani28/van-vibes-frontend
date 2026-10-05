@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useSyncExternalStore } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef, useSyncExternalStore } from 'react';
 import { MenuCategory, CartItem, CustomerDetails, MenuItem, Order, TableInfo } from '@/types/cafe';
 import { MENU_ITEMS, MENU_CATEGORIES } from '@/data/vaan-vibes-menu';
 import { envConfig } from '@/config/env';
@@ -58,6 +58,26 @@ interface CartContextType {
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
+
+function areOrdersEqual(a: Order[], b: Order[]): boolean {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    const o1 = a[i];
+    const o2 = b[i];
+    if (
+      o1.id !== o2.id ||
+      o1.status !== o2.status ||
+      o1.paymentStatus !== o2.paymentStatus ||
+      o1.billGenerated !== o2.billGenerated ||
+      o1.total !== o2.total ||
+      o1.updatedAt !== o2.updatedAt
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const isHydrated = useSyncExternalStore(
@@ -143,7 +163,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [customerDetails]);
 
   const setTable = useCallback((tableInfo: TableInfo) => {
-    setTableState(tableInfo);
+    setTableState((prev) => {
+      if (
+        prev &&
+        prev.id === tableInfo.id &&
+        prev.tableNumber === tableInfo.tableNumber &&
+        prev.status === tableInfo.status &&
+        prev.token === tableInfo.token
+      ) {
+        return prev;
+      }
+      return tableInfo;
+    });
     try {
       localStorage.setItem('vv_table', JSON.stringify(tableInfo));
     } catch {
@@ -152,10 +183,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Poll orders for the table & session
+  const tableId = table?.id;
   const fetchOrders = useCallback(async () => {
-    if (!table?.id) return;
+    if (!tableId) return;
     try {
-      const res = await fetch(`/api/orders?tableId=${table.id}&sessionToken=${sessionToken}`);
+      const res = await fetch(`/api/orders?tableId=${tableId}&sessionToken=${sessionToken}`);
       if (!res.ok) return;
       const data = await res.json();
       if (data.orders) {
@@ -169,25 +201,33 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         const previous = unbilledOrders.filter(
           (o) => ['COMPLETED', 'CANCELLED'].includes(o.status)
         );
-        setActiveOrders(active);
-        setPreviousOrders(previous);
+        setActiveOrders((prev) => (areOrdersEqual(prev, active) ? prev : active));
+        setPreviousOrders((prev) => (areOrdersEqual(prev, previous) ? prev : previous));
       }
     } catch {
       // network hiccup
     }
-  }, [table, sessionToken]);
+  }, [tableId, sessionToken]);
 
-  // Periodic poll for order status updates
+  // Stable ref for fetchOrders so it doesn't trigger WebSocket re-connections
+  const fetchOrdersRef = useRef(fetchOrders);
+  useEffect(() => {
+    fetchOrdersRef.current = fetchOrders;
+  }, [fetchOrders]);
+
+  // Periodic poll for order status updates as fallback to WebSocket
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchOrders();
+      fetchOrdersRef.current();
     }, 100);
-    const interval = setInterval(fetchOrders, 4000);
+    const interval = setInterval(() => {
+      fetchOrdersRef.current();
+    }, 15000);
     return () => {
       clearTimeout(timer);
       clearInterval(interval);
     };
-  }, [fetchOrders]);
+  }, []);
 
   // Dynamic Menu Catalog & Categories from Backend
   const [menuItems, setMenuItems] = useState<MenuItem[]>(MENU_ITEMS);
@@ -199,10 +239,31 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (!res.ok) return;
       const data = await res.json();
       if (Array.isArray(data.items) && data.items.length > 0) {
-        setMenuItems(data.items);
+        setMenuItems((prev) => {
+          if (
+            prev.length === data.items.length &&
+            prev.every(
+              (it, idx) =>
+                it.id === data.items[idx].id &&
+                it.isAvailable === data.items[idx].isAvailable &&
+                it.price === data.items[idx].price
+            )
+          ) {
+            return prev;
+          }
+          return data.items;
+        });
       }
       if (Array.isArray(data.categories) && data.categories.length > 0) {
-        setCategories(data.categories);
+        setCategories((prev) => {
+          if (
+            prev.length === data.categories.length &&
+            prev.every((c, idx) => c.id === data.categories[idx].id)
+          ) {
+            return prev;
+          }
+          return data.categories;
+        });
       }
     } catch {
       // offline fallback
@@ -234,9 +295,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     let isMounted = true;
 
     const connectWs = () => {
+      if (!isMounted) return;
+
       try {
         const tableQuery = table?.id ? `?table_id=${encodeURIComponent(table.id)}` : '';
         const wsUrl = `${envConfig.getWebSocketUrl()}${tableQuery}`;
+
+        // Prevent opening duplicate sockets if one is already open or connecting
+        if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
+          return;
+        }
+
         socket = new WebSocket(wsUrl);
 
         socket.onmessage = (event) => {
@@ -274,7 +343,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                 // Real-time bill generation event: immediately clear all active and previous orders
                 setActiveOrders([]);
                 setPreviousOrders([]);
-                fetchOrders();
+                fetchOrdersRef.current();
               }
             } else if (
               parsed.event === 'ORDER_STATUS_UPDATED' ||
@@ -283,7 +352,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             ) {
               const eventTableId = parsed.data?.tableId || parsed.tableId;
               if (!eventTableId || !table?.id || eventTableId === table.id) {
-                fetchOrders();
+                fetchOrdersRef.current();
               }
             }
           } catch {
@@ -298,7 +367,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         };
 
         socket.onerror = () => {
-          if (socket) socket.close();
+          // Let onclose handle reconnection; do NOT manually close to prevent premature aborts while connecting
         };
       } catch {
         if (isMounted) {
@@ -311,10 +380,31 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       isMounted = false;
-      if (reconnectTimeout) clearTimeout(reconnectTimeout);
-      if (socket) socket.close();
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+        reconnectTimeout = null;
+      }
+      if (socket) {
+        socket.onmessage = null;
+        socket.onerror = null;
+        socket.onclose = null;
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.close(1000, 'Unmounted');
+        } else if (socket.readyState === WebSocket.CONNECTING) {
+          // If still establishing handshake, close cleanly once open to avoid browser abort warning
+          const s = socket;
+          s.onopen = () => {
+            try {
+              s.close(1000, 'Unmounted');
+            } catch {
+              // ignore
+            }
+          };
+        }
+        socket = null;
+      }
     };
-  }, [table?.id, fetchOrders]);
+  }, [table?.id]);
 
   const addItem = useCallback(
     (
@@ -518,48 +608,83 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [table, cart, customerDetails, sessionToken, clearCart, fetchOrders]);
 
+  const contextValue = useMemo<CartContextType>(
+    () => ({
+      isHydrated,
+      cart,
+      table,
+      sessionToken,
+      customerDetails,
+      activeOrders,
+      previousOrders,
+      isCartOpen,
+      isCheckoutOpen,
+      isOrdersOpen,
+      isSearchOpen,
+      activeCategory,
+      searchQuery,
+      isPlacingOrder,
+      orderError,
+      menuItems,
+      categories,
+      refetchMenu,
+      setTable,
+      addItem,
+      updateQuantity,
+      removeItem,
+      clearCart,
+      setCustomerDetails,
+      setIsCartOpen,
+      setIsCheckoutOpen,
+      setIsOrdersOpen,
+      setIsSearchOpen,
+      setActiveCategory,
+      setSearchQuery,
+      itemCount,
+      subtotal,
+      tax,
+      total,
+      placeOrder,
+      fetchOrders,
+      getItemQuantityInCart,
+    }),
+    [
+      isHydrated,
+      cart,
+      table,
+      sessionToken,
+      customerDetails,
+      activeOrders,
+      previousOrders,
+      isCartOpen,
+      isCheckoutOpen,
+      isOrdersOpen,
+      isSearchOpen,
+      activeCategory,
+      searchQuery,
+      isPlacingOrder,
+      orderError,
+      menuItems,
+      categories,
+      refetchMenu,
+      setTable,
+      addItem,
+      updateQuantity,
+      removeItem,
+      clearCart,
+      setCustomerDetails,
+      itemCount,
+      subtotal,
+      tax,
+      total,
+      placeOrder,
+      fetchOrders,
+      getItemQuantityInCart,
+    ]
+  );
+
   return (
-    <CartContext.Provider
-      value={{
-        isHydrated,
-        cart,
-        table,
-        sessionToken,
-        customerDetails,
-        activeOrders,
-        previousOrders,
-        isCartOpen,
-        isCheckoutOpen,
-        isOrdersOpen,
-        isSearchOpen,
-        activeCategory,
-        searchQuery,
-        isPlacingOrder,
-        orderError,
-        menuItems,
-        categories,
-        refetchMenu,
-        setTable,
-        addItem,
-        updateQuantity,
-        removeItem,
-        clearCart,
-        setCustomerDetails,
-        setIsCartOpen,
-        setIsCheckoutOpen,
-        setIsOrdersOpen,
-        setIsSearchOpen,
-        setActiveCategory,
-        setSearchQuery,
-        itemCount,
-        subtotal,
-        tax,
-        total,
-        placeOrder,
-        fetchOrders,
-        getItemQuantityInCart,
-      }}
-    >
+    <CartContext.Provider value={contextValue}>
       {children}
     </CartContext.Provider>
   );
